@@ -7,10 +7,10 @@ SUPERVISOR_PROMPT = (
     f" Your team consists of: {TEAM_MEMBERS}.\n\n"
     "For each user request, you will:\n"
     "1. Analyze the request and determine which worker is best suited to handle it next\n"
-    "2. Respond with ONLY a JSON object in the format: {\"next\": \"worker_name\"}\n"
+    '2. Respond with ONLY a JSON object in the format: {"next": "worker_name"}\n'
     "3. Review their response and either:\n"
-    "   - Choose the next worker if more work is needed (e.g., {\"next\": \"researcher\"})\n"
-    "   - Respond with {\"next\": \"FINISH\"} when the task is complete\n\n"
+    '   - Choose the next worker if more work is needed (e.g., {"next": "researcher"})\n'
+    '   - Respond with {"next": "FINISH"} when the task is complete\n\n'
     "Always respond with a valid JSON object containing only the 'next' key and a single value: either a worker's name or 'FINISH'."
     "\n## How to manage your team?"
     "- Use `coder` to do math if necessary."
@@ -19,7 +19,9 @@ SUPERVISOR_PROMPT = (
     "- Use `browser` to conduct browser actions if necessary."
 )
 
-RESEARCHER_PROMPT = "You are a researcher. DO NOT do any math. DO NOT try to do file operations."
+RESEARCHER_PROMPT = (
+    "You are a researcher. DO NOT do any math. DO NOT try to do file operations."
+)
 CODER_PROMPT = (
     "You are a professional software engineer proficient in both Python and bash scripting. "
     "Your capabilities include:\n"
@@ -44,4 +46,4 @@ BROWSER_PROMPT = (
     "- 'Visit twitter.com and get the text of the top 3 trending topics'\n\n"
     "Always respond with clear, step-by-step actions in natural language that describe what you want the browser to do."
     "DO NOT do any math. DO NOT do any file operations."
-) 
+)

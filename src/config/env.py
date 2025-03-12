@@ -5,11 +5,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Supervisor LLM configuration
-SUPERVISOR_MODEL = os.getenv("SUPERVISOR_MODEL", "gpt-4")  # You might want to use a more capable model for supervision
-SUPERVISOR_BASE_URL = os.getenv("SUPERVISOR_BASE_URL")  # Can be configured separately if needed
-SUPERVISOR_API_KEY = os.getenv("SUPERVISOR_API_KEY")  # Can be configured separately if needed
+SUPERVISOR_MODEL = os.getenv(
+    "SUPERVISOR_MODEL", "gpt-4"
+)  # You might want to use a more capable model for supervision
+SUPERVISOR_BASE_URL = os.getenv(
+    "SUPERVISOR_BASE_URL"
+)  # Can be configured separately if needed
+SUPERVISOR_API_KEY = os.getenv(
+    "SUPERVISOR_API_KEY"
+)  # Can be configured separately if needed
 
 # Agent LLM configuration
-AGENT_MODEL = os.getenv("AGENT_MODEL", "gpt-3.5-turbo")  # Can be a different model for agents
-AGENT_BASE_URL = os.getenv("AGENT_BASE_URL")  # Can be configured separately if needed 
-AGENT_API_KEY = os.getenv("AGENT_API_KEY")  # Can be configured separately if needed 
+AGENT_MODEL = os.getenv(
+    "AGENT_MODEL", "gpt-3.5-turbo"
+)  # Can be a different model for agents
+AGENT_BASE_URL = os.getenv("AGENT_BASE_URL")  # Can be configured separately if needed
+AGENT_API_KEY = os.getenv("AGENT_API_KEY")  # Can be configured separately if needed

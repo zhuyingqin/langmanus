@@ -1,2 +1,2 @@
 # Tool configuration
-TAVILY_MAX_RESULTS = 5 
+TAVILY_MAX_RESULTS = 5

@@ -10,7 +10,7 @@ REASONING_BASE_URL = os.getenv("REASONING_BASE_URL")
 REASONING_API_KEY = os.getenv("REASONING_API_KEY")
 
 # Non-reasoning LLM configuration (for straightforward tasks)
-BASIC_MODEL = os.getenv("BASIC_MODEL", "gpt-4")
+BASIC_MODEL = os.getenv("BASIC_MODEL", "gpt-4o")
 BASIC_BASE_URL = os.getenv("BASIC_BASE_URL")
 BASIC_API_KEY = os.getenv("BASIC_API_KEY")
 

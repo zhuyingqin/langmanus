@@ -97,6 +97,25 @@ You can copy the `.env.example` file as a template to get started:
 cp .env.example .env
 ```
 
+### Configure Pre-commit Hook
+LangManus includes a pre-commit hook that runs linting and formatting checks before each commit. To set it up:
+
+1. Make the pre-commit script executable:
+```bash
+chmod +x pre-commit
+```
+
+2. Install the pre-commit hook:
+```bash
+ln -s ../../pre-commit .git/hooks/pre-commit
+```
+
+The pre-commit hook will automatically:
+- Run linting checks (`make lint`)
+- Run code formatting (`make format`)
+- Add any reformatted files back to staging
+- Prevent commits if there are any linting or formatting errors
+
 ## Usage
 
 ### Basic Execution

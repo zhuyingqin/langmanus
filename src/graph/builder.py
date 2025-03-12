@@ -1,7 +1,14 @@
 from langgraph.graph import StateGraph, START
 
 from .types import State
-from .nodes import supervisor_node, research_node, code_node, file_manager_node, browser_node
+from .nodes import (
+    supervisor_node,
+    research_node,
+    code_node,
+    file_manager_node,
+    browser_node,
+)
+
 
 def build_graph():
     """Build and return the agent workflow graph."""

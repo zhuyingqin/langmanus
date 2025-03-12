@@ -7,6 +7,7 @@ from .decorators import log_io
 # Initialize logger
 logger = logging.getLogger(__name__)
 
+
 @tool
 @log_io
 def bash_tool(
@@ -17,11 +18,7 @@ def bash_tool(
     try:
         # Execute the command and capture output
         result = subprocess.run(
-            cmd,
-            shell=True,
-            check=True,
-            text=True,
-            capture_output=True
+            cmd, shell=True, check=True, text=True, capture_output=True
         )
         # Return stdout as the result
         return result.stdout
@@ -35,6 +32,7 @@ def bash_tool(
         error_message = f"Error executing command: {str(e)}"
         logger.error(error_message)
         return error_message
+
 
 if __name__ == "__main__":
     print(bash_tool.invoke("ls -all"))

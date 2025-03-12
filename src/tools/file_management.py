@@ -6,4 +6,4 @@ logger = logging.getLogger(__name__)
 
 # Initialize file management tool with logging
 LoggedWriteFile = create_logged_tool(WriteFileTool)
-write_file_tool = LoggedWriteFile() 
+write_file_tool = LoggedWriteFile()

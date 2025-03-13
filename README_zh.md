@@ -28,7 +28,7 @@ LangManus 是一个社区驱动的 AI 自动化框架，它建立在开源社区
 
 ```bash
 # 克隆仓库
-git clone https://github.com/yourusername/langmanus.git
+git clone https://github.com/langmanus/langmanus.git
 cd langmanus
 
 # 用uv创建并激活虚拟环境

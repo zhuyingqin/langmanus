@@ -31,8 +31,10 @@ LangManus is a community-driven AI automation framework that builds upon the inc
 git clone https://github.com/yourusername/langmanus.git
 cd langmanus
 
-# Create and activate virtual environment
-python -m venv .venv
+# Create and activate virtual environment through uv
+uv python install 3.12
+uv venv --python 3.12
+
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # Install dependencies
@@ -99,7 +101,6 @@ We're committed to giving back to the community and welcome contributions of all
 
 ### Prerequisites
 
-- Python 3.12 or higher
 - [uv](https://github.com/astral-sh/uv) package manager
 
 ### Installation
@@ -108,14 +109,11 @@ LangManus leverages [uv](https://github.com/astral-sh/uv) as its package manager
 Follow the steps below to set up a virtual environment and install the necessary dependencies:
 
 ```bash
-# Step 1: Create and activate a virtual environment
-python -m venv .venv
+# Step 1: Create and activate a virtual environment through uv
+uv python install 3.12
+uv venv --python 3.12
 
-# On Unix/macOS:
-source .venv/bin/activate
-
-# On Windows:
-.venv\Scripts\activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # Step 2: Install project dependencies
 uv sync

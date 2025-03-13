@@ -31,8 +31,10 @@ LangManus 是一个社区驱动的 AI 自动化框架，它建立在开源社区
 git clone https://github.com/yourusername/langmanus.git
 cd langmanus
 
-# 创建并激活虚拟环境
-python -m venv .venv
+# 用uv创建并激活虚拟环境
+uv python install 3.12
+uv venv --python 3.12
+
 source .venv/bin/activate  # Windows系统使用: .venv\Scripts\activate
 
 # 安装依赖
@@ -99,7 +101,6 @@ LangManus 实现了一个分层的多智能体系统，其中有一个主管智�
 
 ### 前置要求
 
-- Python 3.12 或更高版本
 - [uv](https://github.com/astral-sh/uv) 包管理器
 
 ### 安装步骤
@@ -108,8 +109,9 @@ LangManus 使用 [uv](https://github.com/astral-sh/uv) 作为包管理器以简�
 按照以下步骤设置虚拟环境并安装必要的依赖：
 
 ```bash
-# 步骤 1：创建并激活虚拟环境
-python -m venv .venv
+# 步骤 1：用uv创建并激活虚拟环境
+uv python install 3.12
+uv venv --python 3.12
 
 # Unix/macOS 系统：
 source .venv/bin/activate

@@ -161,8 +161,8 @@ CHROME_INSTANCE_PATH=/Applications/Google Chrome.app/Contents/MacOS/Google Chrom
 >   - 视觉语言 LLM 用于涉及图像理解的任务
 > - 所有 LLM 的基础 URL 都可以独立自定义
 > - 每个 LLM 可以使用不同的 API 密钥
-> - Jina API 密钥是可选的，提供自己的密钥可以获得更高的速率限制
-> - Tavily 搜索默认配置为最多返回 5 个结果
+> - Jina API 密钥是可选的，提供自己的密钥可以获得更高的速率限制（你可以在 [jina.ai](https://jina.ai/) 获该密钥）
+> - Tavily 搜索默认配置为最多返回 5 个结果（你可以在 [app.tavily.com](https://app.tavily.com/) 获取该密钥）
 
 您可以复制 `.env.example` 文件作为模板开始：
 

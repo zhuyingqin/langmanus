@@ -28,7 +28,7 @@ LangManus is a community-driven AI automation framework that builds upon the inc
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/langmanus.git
+git clone https://github.com/langmanus/langmanus.git
 cd langmanus
 
 # Create and activate virtual environment through uv

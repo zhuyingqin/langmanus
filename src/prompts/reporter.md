@@ -38,3 +38,4 @@ You should act as an objective and analytical reporter who:
 - Include relevant data and metrics when available
 - Conclude with actionable insights
 - Proofread for clarity and accuracy
+- Always use the same language as the initial question.

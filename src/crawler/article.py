@@ -32,8 +32,3 @@ class Article:
                 content.append({"type": "text", "text": part.strip()})
 
         return content
-
-
-def get_image_url(url: str, base_url: str) -> str:
-    result = urljoin(base_url, url)
-    return result

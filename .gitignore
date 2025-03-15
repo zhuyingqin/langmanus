@@ -13,3 +13,5 @@ agent_history.gif
 
 # Environment variables
 .env
+
+.idea/

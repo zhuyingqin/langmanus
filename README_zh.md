@@ -11,6 +11,10 @@ LangManus 是一个社区驱动的 AI 自动化框架，它建立在开源社区
 
 ## 演示视频
 
+> **Task**: Calculate the influence index of DeepSeek R1 on HuggingFace. This index can be designed by considering a weighted sum of factors such as followers, downloads, and likes.
+>
+> **任务**：计算 DeepSeek R1 在 HuggingFace 上的影响力指数。该指数可以通过考虑粉丝、下载量和点赞数等权重因素来设计。
+
 [![Demo](./assets/demo.gif)](./assets/demo.mp4)
 
 - [在 YouTube 上观看](https://youtu.be/sZCHqrQBUGk)

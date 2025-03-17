@@ -9,6 +9,13 @@
 
 LangManus is a community-driven AI automation framework that builds upon the incredible work of the open source community. Our goal is to combine language models with specialized tools for tasks like web search, crawling, and Python code execution, while giving back to the community that made this possible.
 
+## Demo Video
+
+[![Demo](./assets/demo.gif)](./assets/demo.mp4)
+
+- [View on YouTube](https://youtu.be/sZCHqrQBUGk)
+- [Download Video](https://github.com/langmanus/langmanus/blob/main/assets/demo.mp4)
+
 ## Table of Contents
 - [Quick Start](#quick-start)
 - [Architecture](#architecture)
@@ -19,14 +26,12 @@ LangManus is a community-driven AI automation framework that builds upon the inc
     - [Installation](#installation)
     - [Configuration](#configuration)
 - [Usage](#usage)
+- [Web UI](#web-ui)
 - [Development](#development)
 - [Contributing](#contributing)
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
 
-## Video Demo
-
-[![](./assets/demo.png)](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
 ## Quick Start
 
 ```bash
@@ -264,6 +269,12 @@ The prompts system uses a template engine ([`src/prompts/template.py`](src/promp
 - Formats system prompts for each agent
 
 Each agent's prompt is defined in a separate markdown file, making it easy to modify behavior and responsibilities without changing the underlying code.
+
+## Web UI
+
+LangManus provides a default web UI.
+
+Please refer to the [langmanus/langmanus-web-ui](https://github.com/langmanus/langmanus-web) project for more details.
 
 ## Development
 

@@ -26,8 +26,9 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
         update={
             "messages": [
                 HumanMessage(
-                    content="Response from researcher:\n"
-                    + result["messages"][-1].content,
+                    content="Response from researcher:\n\n<response>{}\n</response>".format(
+                        result["messages"][-1].content
+                    ),
                     name="researcher",
                 )
             ]
@@ -46,7 +47,9 @@ def code_node(state: State) -> Command[Literal["supervisor"]]:
         update={
             "messages": [
                 HumanMessage(
-                    content="Response from coder:\n" + result["messages"][-1].content,
+                    content="Response from coder:\n\n<response>{}\n</response>".format(
+                        result["messages"][-1].content
+                    ),
                     name="coder",
                 )
             ]
@@ -65,7 +68,9 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
         update={
             "messages": [
                 HumanMessage(
-                    content="Response from browser:\n" + result["messages"][-1].content,
+                    content="Response from browser:\n\n<response>{}\n</response>".format(
+                        result["messages"][-1].content
+                    ),
                     name="browser",
                 )
             ]
@@ -161,7 +166,9 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
         update={
             "messages": [
                 HumanMessage(
-                    content="Response from reporter:\n" + response.content,
+                    content="Response from reporter:\n\n<response>{}\n</response>".format(
+                        response.content
+                    ),
                     name="reporter",
                 )
             ]

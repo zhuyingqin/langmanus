@@ -1,5 +1,6 @@
 import logging
 import json
+from copy import deepcopy
 from typing import Literal
 from langchain_core.messages import HumanMessage
 from langgraph.types import Command
@@ -15,6 +16,8 @@ from .types import State, Router
 
 logger = logging.getLogger(__name__)
 
+RESPONSE_FORMAT = "Response from {}:\n\n<response>{}\n</response>"
+
 
 def research_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the researcher agent that performs research tasks."""
@@ -26,8 +29,8 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
         update={
             "messages": [
                 HumanMessage(
-                    content="Response from researcher:\n\n<response>{}\n</response>".format(
-                        result["messages"][-1].content
+                    content=RESPONSE_FORMAT.format(
+                        "researcher", result["messages"][-1].content
                     ),
                     name="researcher",
                 )
@@ -47,8 +50,8 @@ def code_node(state: State) -> Command[Literal["supervisor"]]:
         update={
             "messages": [
                 HumanMessage(
-                    content="Response from coder:\n\n<response>{}\n</response>".format(
-                        result["messages"][-1].content
+                    content=RESPONSE_FORMAT.format(
+                        "coder", result["messages"][-1].content
                     ),
                     name="coder",
                 )
@@ -68,8 +71,8 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
         update={
             "messages": [
                 HumanMessage(
-                    content="Response from browser:\n\n<response>{}\n</response>".format(
-                        result["messages"][-1].content
+                    content=RESPONSE_FORMAT.format(
+                        "browser", result["messages"][-1].content
                     ),
                     name="browser",
                 )
@@ -111,6 +114,7 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
         llm = get_llm_by_type("reasoning")
     if state.get("search_before_planning"):
         searched_content = tavily_tool.invoke({"query": state["messages"][-1].content})
+        messages = deepcopy(messages)
         messages[
             -1
         ].content += f"\n\n# Relative Search Results\n\n{json.dumps([{'titile': elem['title'], 'content': elem['content']} for elem in searched_content], ensure_ascii=False)}"
@@ -166,9 +170,7 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
         update={
             "messages": [
                 HumanMessage(
-                    content="Response from reporter:\n\n<response>{}\n</response>".format(
-                        response.content
-                    ),
+                    content=RESPONSE_FORMAT.format("reporter", response.content),
                     name="reporter",
                 )
             ]

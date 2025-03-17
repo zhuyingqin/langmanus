@@ -22,8 +22,17 @@ logger = logging.getLogger(__name__)
 # Create the graph
 graph = build_graph()
 
+# Cache for coordinator messages
+coordinator_cache = []
+MAX_CACHE_SIZE = 5
 
-async def run_agent_workflow(user_input_messages: list, debug: bool = False):
+
+async def run_agent_workflow(
+    user_input_messages: list,
+    debug: bool = False,
+    deep_thinking_mode: bool = False,
+    search_before_planning: bool = False,
+):
     """Run the agent workflow with the given user input.
 
     Args:
@@ -43,12 +52,18 @@ async def run_agent_workflow(user_input_messages: list, debug: bool = False):
 
     workflow_id = str(uuid.uuid4())
 
-    streamed_agents = [*TEAM_MEMBERS, "reporter"]
+    streaming_llm_agents = [*TEAM_MEMBERS, "planner", "coordinator"]
 
     yield {
         "event": "start_of_workflow",
         "data": {"workflow_id": workflow_id, "input": user_input_messages},
     }
+
+    # Reset coordinator cache at the start of each workflow
+    global coordinator_cache
+    coordinator_cache = []
+    global is_handoff_case
+    is_handoff_case = False
 
     # TODO: extract message content from object, specifically for on_chat_model_stream
     async for event in graph.astream_events(
@@ -57,6 +72,8 @@ async def run_agent_workflow(user_input_messages: list, debug: bool = False):
             "TEAM_MEMBERS": TEAM_MEMBERS,
             # Runtime Variables
             "messages": user_input_messages,
+            "deep_thinking_mode": deep_thinking_mode,
+            "search_before_planning": search_before_planning,
         },
         version="v2",
     ):
@@ -76,7 +93,7 @@ async def run_agent_workflow(user_input_messages: list, debug: bool = False):
         )
         run_id = "" if (event.get("run_id") is None) else str(event["run_id"])
 
-        if kind == "on_chain_start" and name in streamed_agents:
+        if kind == "on_chain_start" and name in streaming_llm_agents:
             ydata = {
                 "event": "start_of_agent",
                 "data": {
@@ -84,7 +101,7 @@ async def run_agent_workflow(user_input_messages: list, debug: bool = False):
                     "agent_id": f"{workflow_id}_{name}_{langgraph_step}",
                 },
             }
-        elif kind == "on_chain_end" and name in streamed_agents:
+        elif kind == "on_chain_end" and name in streaming_llm_agents:
             ydata = {
                 "event": "end_of_agent",
                 "data": {
@@ -92,25 +109,76 @@ async def run_agent_workflow(user_input_messages: list, debug: bool = False):
                     "agent_id": f"{workflow_id}_{name}_{langgraph_step}",
                 },
             }
-        elif kind == "on_chat_model_start" and node in streamed_agents:
+        elif kind == "on_chat_model_start" and node in streaming_llm_agents:
             ydata = {
                 "event": "start_of_llm",
                 "data": {"agent_name": node},
             }
-        elif kind == "on_chat_model_end" and node in streamed_agents:
+        elif kind == "on_chat_model_end" and node in streaming_llm_agents:
             ydata = {
                 "event": "end_of_llm",
                 "data": {"agent_name": node},
             }
-        elif kind == "on_chat_model_stream" and node in streamed_agents:
+        elif kind == "on_chat_model_stream" and node in streaming_llm_agents:
             content = data["chunk"].content
             if content is None or content == "":
-                continue
-            ydata = {
-                "event": "message",
-                "data": {"message_id": data["chunk"].id, "delta": {"content": content}},
-            }
-        elif kind == "on_tool_start":
+                if not data["chunk"].additional_kwargs.get("reasoning_content"):
+                    # Skip empty messages
+                    continue
+                ydata = {
+                    "event": "message",
+                    "data": {
+                        "message_id": data["chunk"].id,
+                        "delta": {
+                            "reasoning_content": (
+                                data["chunk"].additional_kwargs["reasoning_content"]
+                            )
+                        },
+                    },
+                }
+            else:
+                # Check if the message is from the coordinator
+                if node == "coordinator":
+                    # Cache coordinator messages
+                    if len(coordinator_cache) < MAX_CACHE_SIZE - 1:
+                        coordinator_cache.append(content)
+                        continue
+
+                    if len(coordinator_cache) == MAX_CACHE_SIZE - 1:
+                        coordinator_cache.append(content)
+                        cached_content = "".join(coordinator_cache)
+                        cached_content = cached_content.replace("```python", "")
+                        if cached_content.startswith("handoff"):
+                            is_handoff_case = True
+                            continue
+                        # Send the cached message
+                        ydata = {
+                            "event": "message",
+                            "data": {
+                                "message_id": data["chunk"].id,
+                                "delta": {"content": cached_content},
+                            },
+                        }
+
+                    if not is_handoff_case:
+                        # For other agents, send the message directly
+                        ydata = {
+                            "event": "message",
+                            "data": {
+                                "message_id": data["chunk"].id,
+                                "delta": {"content": content},
+                            },
+                        }
+                else:
+                    # For other agents, send the message directly
+                    ydata = {
+                        "event": "message",
+                        "data": {
+                            "message_id": data["chunk"].id,
+                            "delta": {"content": content},
+                        },
+                    }
+        elif kind == "on_tool_start" and node in TEAM_MEMBERS:
             ydata = {
                 "event": "tool_call",
                 "data": {
@@ -119,7 +187,7 @@ async def run_agent_workflow(user_input_messages: list, debug: bool = False):
                     "tool_input": data.get("input"),
                 },
             }
-        elif kind == "on_tool_end":
+        elif kind == "on_tool_end" and node in TEAM_MEMBERS:
             ydata = {
                 "event": "tool_call_result",
                 "data": {

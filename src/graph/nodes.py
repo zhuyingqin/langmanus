@@ -1,14 +1,16 @@
 import logging
+import json
 from typing import Literal
 from langchain_core.messages import HumanMessage
 from langgraph.types import Command
 from langgraph.graph import END
 
-from src.agents import research_agent, coder_agent, file_manager_agent, browser_agent
+from src.agents import research_agent, coder_agent, browser_agent
 from src.agents.llm import get_llm_by_type
 from src.config import TEAM_MEMBERS
 from src.config.agents import AGENT_LLM_MAP
 from src.prompts.template import apply_prompt_template
+from src.tools.search import tavily_tool
 from .types import State, Router
 
 logger = logging.getLogger(__name__)
@@ -23,7 +25,11 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
     return Command(
         update={
             "messages": [
-                HumanMessage(content=result["messages"][-1].content, name="researcher")
+                HumanMessage(
+                    content="Response from researcher:\n"
+                    + result["messages"][-1].content,
+                    name="researcher",
+                )
             ]
         },
         goto="supervisor",
@@ -39,24 +45,9 @@ def code_node(state: State) -> Command[Literal["supervisor"]]:
     return Command(
         update={
             "messages": [
-                HumanMessage(content=result["messages"][-1].content, name="coder")
-            ]
-        },
-        goto="supervisor",
-    )
-
-
-def file_manager_node(state: State) -> Command[Literal["supervisor"]]:
-    """Node for the file manager agent that handles file operations."""
-    logger.info("File manager agent starting task")
-    result = file_manager_agent.invoke(state)
-    logger.info("File manager agent completed task")
-    logger.debug(f"File manager agent response: {result['messages'][-1].content}")
-    return Command(
-        update={
-            "messages": [
                 HumanMessage(
-                    content=result["messages"][-1].content, name="file_manager"
+                    content="Response from coder:\n" + result["messages"][-1].content,
+                    name="coder",
                 )
             ]
         },
@@ -73,14 +64,17 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
     return Command(
         update={
             "messages": [
-                HumanMessage(content=result["messages"][-1].content, name="browser")
+                HumanMessage(
+                    content="Response from browser:\n" + result["messages"][-1].content,
+                    name="browser",
+                )
             ]
         },
         goto="supervisor",
     )
 
 
-def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "reporter"]]:
+def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
     """Supervisor node that decides which agent should act next."""
     logger.info("Supervisor evaluating next action")
     messages = apply_prompt_template("supervisor", state)
@@ -94,15 +88,71 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "reporter"]]
     logger.debug(f"Supervisor response: {response}")
 
     if goto == "FINISH":
-        goto = "reporter"
-        logger.info("Go to consolidate final report decided by supervisor")
+        goto = "__end__"
+        logger.info("Workflow completed")
     else:
         logger.info(f"Supervisor delegating to: {goto}")
 
     return Command(goto=goto, update={"next": goto})
 
 
-def reporter_node(state: State) -> Command[Literal["__end__"]]:
+def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
+    """Planner node that generate the full plan."""
+    logger.info("Planner generating full plan")
+    messages = apply_prompt_template("planner", state)
+    # whether to enable deep thinking mode
+    llm = get_llm_by_type("basic")
+    if state.get("deep_thinking_mode"):
+        llm = get_llm_by_type("reasoning")
+    if state.get("search_before_planning"):
+        searched_content = tavily_tool.invoke({"query": state["messages"][-1].content})
+        messages.append(
+            HumanMessage(
+                content=f"# Relative Search Results\n\n{json.dumps([{'titile': elem['title'], 'content': elem['content']} for elem in searched_content], ensure_ascii=False)}",
+                name="planner",
+            )
+        )
+    stream = llm.stream(messages)
+    full_response = ""
+    for chunk in stream:
+        full_response += chunk.content
+    logger.debug(f"Current state messages: {state['messages']}")
+    logger.debug(f"Planner response: {full_response}")
+
+    goto = "supervisor"
+    try:
+        json.loads(full_response)
+    except json.JSONDecodeError:
+        logger.warning("Planner response is not a valid JSON")
+        goto = "__end__"
+
+    return Command(
+        update={
+            "messages": [HumanMessage(content=full_response, name="planner")],
+            "full_plan": full_response,
+        },
+        goto=goto,
+    )
+
+
+def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
+    """Coordinator node that communicate with customers."""
+    logger.info("Coordinator talking.")
+    messages = apply_prompt_template("coordinator", state)
+    response = get_llm_by_type(AGENT_LLM_MAP["coordinator"]).invoke(messages)
+    logger.debug(f"Current state messages: {state['messages']}")
+    logger.debug(f"reporter response: {response}")
+
+    goto = "__end__"
+    if "handoff_to_planner" in response.content:
+        goto = "planner"
+
+    return Command(
+        goto=goto,
+    )
+
+
+def reporter_node(state: State) -> Command[Literal["supervisor"]]:
     """Reporter node that write a final report."""
     logger.info("Reporter write final report")
     messages = apply_prompt_template("reporter", state)
@@ -110,6 +160,14 @@ def reporter_node(state: State) -> Command[Literal["__end__"]]:
     logger.debug(f"Current state messages: {state['messages']}")
     logger.debug(f"reporter response: {response}")
 
-    logger.info("Workflow completion")
-
-    return Command(goto=END, update={"next": END})
+    return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content="Response from reporter:\n" + response.content,
+                    name="reporter",
+                )
+            ]
+        },
+        goto="supervisor",
+    )

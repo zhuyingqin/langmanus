@@ -43,8 +43,14 @@ def run_agent_workflow(user_input: str, debug: bool = False):
             "TEAM_MEMBERS": TEAM_MEMBERS,
             # Runtime Variables
             "messages": [{"role": "user", "content": user_input}],
+            "deep_thinking_mode": True,
+            "search_before_planning": True,
         }
     )
     logger.debug(f"Final workflow state: {result}")
     logger.info("Workflow completed successfully")
     return result
+
+
+if __name__ == "__main__":
+    print(graph.get_graph().draw_mermaid())

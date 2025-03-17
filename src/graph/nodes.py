@@ -106,12 +106,9 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
         llm = get_llm_by_type("reasoning")
     if state.get("search_before_planning"):
         searched_content = tavily_tool.invoke({"query": state["messages"][-1].content})
-        messages.append(
-            HumanMessage(
-                content=f"# Relative Search Results\n\n{json.dumps([{'titile': elem['title'], 'content': elem['content']} for elem in searched_content], ensure_ascii=False)}",
-                name="planner",
-            )
-        )
+        messages[
+            -1
+        ].content += f"\n\n# Relative Search Results\n\n{json.dumps([{'titile': elem['title'], 'content': elem['content']} for elem in searched_content], ensure_ascii=False)}"
     stream = llm.stream(messages)
     full_response = ""
     for chunk in stream:

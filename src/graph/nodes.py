@@ -16,7 +16,7 @@ from .types import State, Router
 
 logger = logging.getLogger(__name__)
 
-RESPONSE_FORMAT = "Response from {}:\n\n<response>{}\n</response>"
+RESPONSE_FORMAT = "Response from {}:\n\n<response>\n{}\n</response>\n\n*Please execute the next step.*"
 
 
 def research_node(state: State) -> Command[Literal["supervisor"]]:
@@ -124,6 +124,12 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
         full_response += chunk.content
     logger.debug(f"Current state messages: {state['messages']}")
     logger.debug(f"Planner response: {full_response}")
+
+    if full_response.startswith("```json"):
+        full_response = full_response.removeprefix("```json")
+
+    if full_response.endswith("```"):
+        full_response = full_response.removesuffix("```")
 
     goto = "supervisor"
     try:

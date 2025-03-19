@@ -4,17 +4,19 @@ FastAPI application for LangManus.
 
 import json
 import logging
+import os
 from typing import Dict, List, Any, Optional, Union
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 import asyncio
 from typing import AsyncGenerator, Dict, List, Any
 
 from src.graph import build_graph
-from src.config import TEAM_MEMBERS
+from src.config import TEAM_MEMBERS, BROWSER_HISTORY_DIR
 from src.service.workflow_service import run_agent_workflow
 
 # Configure logging
@@ -132,4 +134,28 @@ async def chat_endpoint(request: ChatRequest, req: Request):
         )
     except Exception as e:
         logger.error(f"Error in chat endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/browser_history/{filename}")
+async def get_browser_history_file(filename: str):
+    """
+    Get a specific browser history GIF file.
+
+    Args:
+        filename: The filename of the GIF to retrieve
+
+    Returns:
+        The GIF file
+    """
+    try:
+        file_path = os.path.join(BROWSER_HISTORY_DIR, filename)
+        if not os.path.exists(file_path) or not filename.endswith(".gif"):
+            raise HTTPException(status_code=404, detail="File not found")
+
+        return FileResponse(file_path, media_type="image/gif", filename=filename)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving browser history file: {e}")
         raise HTTPException(status_code=500, detail=str(e))

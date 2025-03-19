@@ -25,7 +25,7 @@ from .env import (
     CHROME_PROXY_USERNAME,
     CHROME_PROXY_PASSWORD,
 )
-from .tools import TAVILY_MAX_RESULTS
+from .tools import TAVILY_MAX_RESULTS, BROWSER_HISTORY_DIR
 
 # Team configuration
 TEAM_MEMBERS = ["researcher", "coder", "browser", "reporter"]
@@ -51,4 +51,5 @@ __all__ = [
     "CHROME_PROXY_SERVER",
     "CHROME_PROXY_USERNAME",
     "CHROME_PROXY_PASSWORD",
+    "BROWSER_HISTORY_DIR",
 ]

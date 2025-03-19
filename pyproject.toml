@@ -27,6 +27,7 @@ dependencies = [
     "yfinance>=0.2.54",
     "langchain-deepseek>=0.1.2",
     "litellm>=1.63.11",
+    "json-repair>=0.7.0",
 ]
 
 [project.optional-dependencies]

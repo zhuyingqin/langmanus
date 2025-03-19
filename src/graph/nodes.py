@@ -1,10 +1,14 @@
 import logging
 import json
+import json_repair
+import logging
 from copy import deepcopy
 from typing import Literal
 from langchain_core.messages import HumanMessage, BaseMessage
+
+import json_repair
+from langchain_core.messages import HumanMessage
 from langgraph.types import Command
-from langgraph.graph import END
 
 from src.agents import research_agent, coder_agent, browser_agent
 from src.llms.llm import get_llm_by_type
@@ -12,6 +16,7 @@ from src.config import TEAM_MEMBERS
 from src.config.agents import AGENT_LLM_MAP
 from src.prompts.template import apply_prompt_template
 from src.tools.search import tavily_tool
+from src.utils.json_utils import repair_json_output
 from .types import State, Router
 
 logger = logging.getLogger(__name__)
@@ -24,12 +29,15 @@ def research_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Research agent starting task")
     result = research_agent.invoke(state)
     logger.info("Research agent completed task")
-    logger.debug(f"Research agent response: {result['messages'][-1].content}")
+    response_content = result["messages"][-1].content
+    # 尝试修复可能的JSON输出
+    response_content = repair_json_output(response_content)
+    logger.debug(f"Research agent response: {response_content}")
     return Command(
         update={
             "messages": [
                 HumanMessage(
-                    content=result["messages"][-1].content,
+                    content=response_content,
                     name="researcher",
                 )
             ]
@@ -43,12 +51,15 @@ def code_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Code agent starting task")
     result = coder_agent.invoke(state)
     logger.info("Code agent completed task")
-    logger.debug(f"Code agent response: {result['messages'][-1].content}")
+    response_content = result["messages"][-1].content
+    # 尝试修复可能的JSON输出
+    response_content = repair_json_output(response_content)
+    logger.debug(f"Code agent response: {response_content}")
     return Command(
         update={
             "messages": [
                 HumanMessage(
-                    content=result["messages"][-1].content,
+                    content=response_content,
                     name="coder",
                 )
             ]
@@ -62,12 +73,15 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
     logger.info("Browser agent starting task")
     result = browser_agent.invoke(state)
     logger.info("Browser agent completed task")
-    logger.debug(f"Browser agent response: {result['messages'][-1].content}")
+    response_content = result["messages"][-1].content
+    # 尝试修复可能的JSON输出
+    response_content = repair_json_output(response_content)
+    logger.debug(f"Browser agent response: {response_content}")
     return Command(
         update={
             "messages": [
                 HumanMessage(
-                    content=result["messages"][-1].content,
+                    content=response_content,
                     name="browser",
                 )
             ]
@@ -132,7 +146,8 @@ def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
 
     goto = "supervisor"
     try:
-        json.loads(full_response)
+        repaired_response = json_repair.loads(full_response)
+        full_response = json.dumps(repaired_response)
     except json.JSONDecodeError:
         logger.warning("Planner response is not a valid JSON")
         goto = "__end__"
@@ -152,11 +167,17 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     messages = apply_prompt_template("coordinator", state)
     response = get_llm_by_type(AGENT_LLM_MAP["coordinator"]).invoke(messages)
     logger.debug(f"Current state messages: {state['messages']}")
-    logger.debug(f"Coordinator response: {response}")
+    response_content = response.content
+    # 尝试修复可能的JSON输出
+    response_content = repair_json_output(response_content)
+    logger.debug(f"Coordinator response: {response_content}")
 
     goto = "__end__"
-    if "handoff_to_planner" in response.content:
+    if "handoff_to_planner" in response_content:
         goto = "planner"
+
+    # 更新response.content为修复后的内容
+    response.content = response_content
 
     return Command(
         goto=goto,
@@ -169,13 +190,16 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
     messages = apply_prompt_template("reporter", state)
     response = get_llm_by_type(AGENT_LLM_MAP["reporter"]).invoke(messages)
     logger.debug(f"Current state messages: {state['messages']}")
-    logger.debug(f"reporter response: {response}")
+    response_content = response.content
+    # 尝试修复可能的JSON输出
+    response_content = repair_json_output(response_content)
+    logger.debug(f"reporter response: {response_content}")
 
     return Command(
         update={
             "messages": [
                 HumanMessage(
-                    content=response.content,
+                    content=response_content,
                     name="reporter",
                 )
             ]

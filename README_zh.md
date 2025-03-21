@@ -13,9 +13,24 @@ LangManus 是一个社区驱动的 AI 自动化框架，它建立在开源社区
 
 ## 演示视频
 
-> **Task**: Calculate the influence index of DeepSeek R1 on HuggingFace. This index can be designed by considering a weighted sum of factors such as followers, downloads, and likes.
->
-> **任务**：计算 DeepSeek R1 在 HuggingFace 上的影响力指数。该指数可以通过考虑粉丝、下载量和点赞数等权重因素来设计。
+**Task**: Calculate the influence index of DeepSeek R1 on HuggingFace. This index can be designed by considering a weighted sum of factors such as followers, downloads, and likes.
+
+**LangManus的全自动计划与解决方案**:
+
+1. **收集最新信息**  
+   通过在线搜索获取关于“DeepSeek R1”、“HuggingFace”以及相关主题的最新信息。
+
+2. **访问HuggingFace官网**  
+   使用 Chromium 实例访问 HuggingFace 的官方网站，搜索“DeepSeek R1”，并检索最新数据，包括关注者数量、点赞数、下载量及其他相关指标。
+
+3. **查找模型影响力计算公式**  
+   使用搜索引擎和网页抓取技术，寻找计算模型影响力的相关公式或方法。
+
+4. **使用Python计算影响力指数**  
+   基于收集到的数据，使用Python编程计算DeepSeek R1的影响力指数。
+
+5. **生成综合报告**  
+   将分析结果整理成一份全面的报告并呈现给用户。
 
 ![Demo](./assets/demo.gif)
 

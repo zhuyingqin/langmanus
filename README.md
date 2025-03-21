@@ -18,7 +18,6 @@ LangManus is a community-driven AI automation framework that builds upon the inc
 ![Demo](./assets/demo.gif)
 
 - [View on YouTube](https://youtu.be/sZCHqrQBUGk)
-- [Download Video](https://github.com/langmanus/langmanus/blob/main/assets/demo.mp4)
 
 ## Table of Contents
 

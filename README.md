@@ -13,7 +13,14 @@ LangManus is a community-driven AI automation framework that builds upon the inc
 
 ## Demo Video
 
-> **Task**: Calculate the influence index of DeepSeek R1 on HuggingFace. This index can be designed by considering a weighted sum of factors such as followers, downloads, and likes.
+**Task**: Calculate the influence index of DeepSeek R1 on HuggingFace. This index can be designed using a weighted sum of factors such as followers, downloads, and likes.
+
+**LangManus's Fully Automated Plan and Solution**:
+1. Gather the latest information about "DeepSeek R1", "HuggingFace", and related topics through online searches.
+2. Interact with a Chromium instance to visit the HuggingFace official website, search for "DeepSeek R1" and retrieve the latest data, including followers, likes, downloads, and other relevant metrics.
+3. Find formulas for calculating model influence using search engines and web scraping.
+4. Use Python to compute the influence index of DeepSeek R1 based on the collected data.
+5. Present a comprehensive report to the user.
 
 ![Demo](./assets/demo.gif)
 

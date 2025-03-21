@@ -20,7 +20,10 @@ LangManus 是一个社区驱动的 AI 自动化框架，它建立在开源社区
 ![Demo](./assets/demo.gif)
 
 - [在 YouTube 上观看](https://youtu.be/sZCHqrQBUGk)
-- [下载视频](https://github.com/langmanus/langmanus/blob/main/assets/demo.mp4)
+- 中文自媒体报道
+    - 01Coder - Manus 开源平替 - LangManus（LangChain力荐）
+        - [YouTube](https://www.youtube.com/watch?v=XzCmPOfd0D0&lc=UgyNFuKmya8R6rVm_l94AaABAg&ab_channel=01Coder)
+        - [B站](https://www.bilibili.com/video/BV1SeXqYfEop/)
 
 ## 目录
 

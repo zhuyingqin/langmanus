@@ -12,19 +12,51 @@ In LangManus, we categorize models into three types:
 
 ### 1. **Chat Model**
 - **Usage**: For conversation scenarios, mainly called in **Supervisor** and **Agent**.
-- **Supported Models**: `gpt-4o`, `qwen-max-latest`.
+- **Supported Models**: `gpt-4o`, `qwen-max-latest`, `gemini-2.0-flash`, `deepseek-v3`.
 
 ### 2. **Reasoning Model**
 - **Usage**: For complex reasoning tasks, used in **Planner** when **"Deep Think"** mode is enabled.
-- **Supported Models**: `o1`, `o3-mini`, `QwQ-Plus`, `DeepSeek-R1`.
+- **Supported Models**: `o1`, `o3-mini`, `QwQ-Plus`, `DeepSeek-R1`, `gemini-2.0-flash-thinking-exp`.
 
 ### 3. **VL Model** (Vision-Language Model)
 - **Usage**: For handling tasks combining vision and language, mainly called in **Browser Tool**.
-- **Supported Models**: `gpt-4o`, `qwen2.5-vl-72b-instruct`.
+- **Supported Models**: `gpt-4o`, `qwen2.5-vl-72b-instruct`, `gemini-2.0-flash`.
 
 ### How to switch models?
 
 You can switch models by modifying the `.env` file in the project root directory. For specific configuration methods, please refer to [README.md](https://github.com/langmanus/langmanus/blob/main/README.md).
+
+### How to use Ollama models in LangManus?
+
+LangManus supports integration with Ollama models. To use an Ollama model, you need to:
+1. Prefix the model name with `ollama_chat/`
+2. Configure the correct base URL for your Ollama server
+
+Here's an example of the environment configuration for using Ollama models:
+
+```
+BASIC_API_KEY=
+BASIC_BASE_URL=http://localhost:11434
+BASIC_MODEL=ollama_chat/qwen2.5:0.5b
+```
+
+### How to use Google Gemini models in LangManus?
+
+LangManus supports integration with Google's Gemini models. To use a Gemini model, follow these steps:
+
+1. Obtain your Gemini API key from Google AI Studio (https://makersuite.google.com/app/apikey)
+2. Configure your environment variables as follows:
+
+```
+BASIC_API_KEY=YOUR_GEMINI_KEY
+BASIC_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+BASIC_MODEL=gemini-2.0-flash
+```
+
+Note:
+- Replace `YOUR_GEMINI_KEY` with your actual Gemini API key
+- The base URL is specifically configured to use Gemini through LangManus's OpenAI-compatible interface
+- Available models include `gemini-2.0-flash` for chat and vision tasks
 
 ---
 

@@ -16,7 +16,7 @@
 
 ### 2. **Reasoning Model**（推理模型）
 - **用途**：用于复杂推理任务，当 **“Deep Think”** 模式启用时，在 **Planner** 中被使用。
-- **支持的模型**：`o1`、`o3-mini`、`QwQ-Plus`、`DeepSeek-R1`。
+- **支持的模型**：`o1`、`o3-mini`、`QwQ-Plus`、`DeepSeek-R1`, `gemini-2.0-flash-thinking-exp`。
 
 ### 3. **VL Model**（视觉语言模型）
 - **用途**：用于处理视觉和语言结合的任务，主要在 **Browser Tool** 中被调用。
@@ -25,6 +25,40 @@
 ### 如何切换模型？
 
 您可以通过修改项目根目录下的 `.env` 文件来切换所使用的模型。具体配置方法请参考 [README.md](https://github.com/langmanus/langmanus/blob/main/README.md)。
+
+---
+
+### 如何使用 Ollama 模型？
+
+LangManus 支持集成 Ollama 模型。要使用 Ollama 模型，你需要：
+1. 在模型名称前添加 `ollama_chat/` 前缀
+2. 配置正确的 Ollama 服务器基础 URL
+
+以下是使用 Ollama 模型的环境配置示例：
+
+```
+BASIC_API_KEY=
+BASIC_BASE_URL=http://localhost:11434
+BASIC_MODEL=ollama_chat/qwen2.5:0.5b
+```
+
+### 如何使用 Google Gemini 模型？
+
+LangManus 支持集成 Google 的 Gemini 模型。要使用 Gemini 模型，请按照以下步骤操作：
+
+1. 从 Google AI Studio 获取 Gemini API 密钥 (https://makersuite.google.com/app/apikey)
+2. 按如下方式配置环境变量：
+
+```
+BASIC_API_KEY=YOUR_GEMINI_KEY
+BASIC_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+BASIC_MODEL=gemini-2.0-flash
+```
+
+注意事项：
+- 将 `YOUR_GEMINI_KEY` 替换为你实际的 Gemini API 密钥
+- 基础 URL 专门配置为通过 LangManus 的 OpenAI 兼容接口使用 Gemini
+- 可用模型包括用于聊天和视觉任务的 `gemini-2.0-flash`
 
 ---
 

@@ -1,0 +1,110 @@
+# FAQ
+
+## 目录
+
+- [LangManus 支持哪些模型？](#langmanus-支持哪些模型)
+- [如何部署 Web UI 前端项目？](#如何部署-web-ui-前端项目)
+- [可以用本地的 Chrome 浏览器作为 Browser Tool 吗？](#可以用本地的-chrome-浏览器作为-browser-tool-吗)
+
+## LangManus 支持哪些模型？
+
+在 LangManus 中，我们将模型分为以下三类：
+
+### 1. **Chat Model**（聊天模型）
+- **用途**：用于对话场景，主要在 **Supervisor** 和 **Agent** 中被调用。
+- **支持的模型**：`gpt-4o`、`qwen-max-latest`。
+
+### 2. **Reasoning Model**（推理模型）
+- **用途**：用于复杂推理任务，当 **“Deep Think”** 模式启用时，在 **Planner** 中被使用。
+- **支持的模型**：`o1`、`o3-mini`、`QwQ-Plus`、`DeepSeek-R1`。
+
+### 3. **VL Model**（视觉语言模型）
+- **用途**：用于处理视觉和语言结合的任务，主要在 **Browser Tool** 中被调用。
+- **支持的模型**：`gpt-4o`、`qwen2.5-vl-72b-instruct`。
+
+### 如何切换模型？
+
+您可以通过修改项目根目录下的 `.env` 文件来切换所使用的模型。具体配置方法请参考 [README.md](https://github.com/langmanus/langmanus/blob/main/README.md)。
+
+---
+
+## 如何部署 Web UI 前端项目？
+
+LangManus 提供了一个开箱即用的 Web UI 前端项目，您可以通过以下步骤完成部署。请访问 [LangManus Web UI GitHub 仓库](https://github.com/langmanus/langmanus-web) 获取更多信息。
+
+### 步骤 1：启动 LangManus 的后端服务
+
+首先，确保您已经克隆并安装了 LangManus 的后端项目。进入后端项目目录并启动服务：
+
+```bash
+cd langmanus
+make serve
+```
+
+默认情况下，LangManus 后端服务会运行在 `http://localhost:8000`。
+
+---
+
+### 步骤 2：安装 Web UI 前端项目及其依赖
+
+接下来，克隆 LangManus 的 Web UI 前端项目并安装依赖：
+
+```bash
+git clone https://github.com/langmanus/langmanus-web.git
+cd langmanus-web
+pnpm install
+```
+
+> **注意**: 如果您尚未安装 `pnpm`，请先安装它。可以通过以下命令安装：
+> ```bash
+> npm install -g pnpm
+> ```
+
+---
+
+### 步骤 3：启动 Web UI 服务
+
+完成依赖安装后，启动 Web UI 的开发服务器：
+
+```bash
+pnpm dev
+```
+
+默认情况下，LangManus 的 Web UI 服务会运行在 `http://localhost:3000`。
+
+---
+
+## Browser Tool 无法正常启动？
+
+LangManus 使用 [`browser-use`](https://github.com/browser-use/browser-use) 来实现浏览器相关功能，而 `browser-use` 是基于 [`Playwright`](https://playwright.dev/python) 构建的。因此，在首次使用前，需要安装 `Playwright` 的浏览器实例。
+
+```bash
+uv run playwright install
+```
+
+---
+
+## 可以用本地的 Chrome 浏览器作为 Browser Tool 吗？
+
+是的，LangManus 支持使用本地的 Chrome 浏览器作为 Browser Tool。LangManus 使用 [`browser-use`](https://github.com/browser-use/browser-use) 来实现浏览器相关功能，而 `browser-use` 是基于 [`Playwright`](https://playwright.dev/python) 实现的。通过配置 `.env` 文件中的 `CHROME_INSTANCE_PATH`，你可以指定本地 Chrome 浏览器的路径，从而实现使用本地浏览器实例的功能。
+
+### 配置步骤
+
+1. **退出所有 Chrome 浏览器进程**
+   在使用本地 Chrome 浏览器之前，确保所有 Chrome 浏览器进程已完全退出。否则，`browser-use` 无法正常启动浏览器实例。
+
+2. **设置 `CHROME_INSTANCE_PATH`**
+   在项目的 `.env` 文件中，添加或修改以下配置项：
+   ```plaintext
+   CHROME_INSTANCE_PATH=/path/to/your/chrome
+   ```
+   将 `/path/to/your/chrome` 替换为本地 Chrome 浏览器的可执行文件路径。例如：
+   - macOS: `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`
+   - Windows: `C:\Program Files\Google\Chrome\Application\chrome.exe`
+   - Linux: `/usr/bin/google-chrome`
+
+3. **启动 LangManus**
+   启动 LangManus 后，`browser-use` 将使用你指定的本地 Chrome 浏览器实例。
+
+4. **访问 LangManus 的 Web UI**
+   由于本地 Chrome 浏览器被 `browser-use` 占用，你需要使用其他浏览器（如 Safari、Mozilla Firefox）访问 LangManus 的 Web 界面，地址通常为 `http://localhost:3000`。或者，你也可以从另一台计算机上访问 LangManus 的 Web UI。

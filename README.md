@@ -28,13 +28,14 @@ LangManus is a community-driven AI automation framework that builds upon the inc
 - [Features](#features)
 - [Why LangManus?](#why-langmanus)
 - [Setup](#setup)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Configuration](#configuration)
+    - [Prerequisites](#prerequisites)
+    - [Installation](#installation)
+    - [Configuration](#configuration)
 - [Usage](#usage)
 - [Docker](#docker)
 - [Web UI](#web-ui)
 - [Development](#development)
+- [FAQ](#faq)
 - [Contributing](#contributing)
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
@@ -53,7 +54,7 @@ uv sync
 uv run playwright install
 
 # Configure environment
-# Windows: copy .env.example .env 
+# Windows: copy .env.example .env
 cp .env.example .env
 # Edit .env with your API keys
 
@@ -104,30 +105,30 @@ The system consists of the following agents working together:
 ### Core Capabilities
 
 - 🤖 **LLM Integration**
-  - Support for open source models like Qwen
-  - OpenAI-compatible API interface
-  - Multi-tier LLM system for different task complexities
+    - Support for open source models like Qwen
+    - OpenAI-compatible API interface
+    - Multi-tier LLM system for different task complexities
 
 ### Tools and Integrations
 
 - 🔍 **Search and Retrieval**
-  - Web search via Tavily API
-  - Neural search with Jina
-  - Advanced content extraction
+    - Web search via Tavily API
+    - Neural search with Jina
+    - Advanced content extraction
 
 ### Development Features
 
 - 🐍 **Python Integration**
-  - Built-in Python REPL
-  - Code execution environment
-  - Package management with uv
+    - Built-in Python REPL
+    - Code execution environment
+    - Package management with uv
 
 ### Workflow Management
 
 - 📊 **Visualization and Control**
-  - Workflow graph visualization
-  - Multi-agent orchestration
-  - Task delegation and monitoring
+    - Workflow graph visualization
+    - Multi-agent orchestration
+    - Task delegation and monitoring
 
 ## Why LangManus?
 
@@ -218,9 +219,9 @@ VL_AZURE_DEPLOYMENT=gpt-4o-2024-08-06
 > **Note:**
 >
 > - The system uses different models for different types of tasks:
->   - Reasoning LLM for complex decision-making and analysis
->   - Basic LLM for simpler text-based tasks
->   - Vision-Language LLM for tasks involving image understanding
+>     - Reasoning LLM for complex decision-making and analysis
+>     - Basic LLM for simpler text-based tasks
+>     - Vision-Language LLM for tasks involving image understanding
 > - You can customize the base URLs for all LLMs independently, and you can use LiteLLM's board LLM support by following [this guide](https://docs.litellm.ai/docs/providers).
 > - Each LLM can use different API keys if needed
 > - Jina API key is optional. Provide your own key to access a higher rate limit (get your API key at [jina.ai](https://jina.ai/))
@@ -280,14 +281,14 @@ uv run server.py
 The API server exposes the following endpoints:
 
 - `POST /api/chat/stream`: Chat endpoint for LangGraph invoke with streaming support
-  - Request body:
+    - Request body:
   ```json
   {
     "messages": [{ "role": "user", "content": "Your query here" }],
     "debug": false
   }
   ```
-  - Returns a Server-Sent Events (SSE) stream with the agent's responses
+    - Returns a Server-Sent Events (SSE) stream with the agent's responses
 
 ### Advanced Configuration
 
@@ -309,16 +310,16 @@ LangManus uses a sophisticated prompting system in the `src/prompts` directory t
 
 - **Coder ([`src/prompts/coder.md`](src/prompts/coder.md))**: Professional software engineer role focused on Python and bash scripting. Handles:
 
-  - Python code execution and analysis
-  - Shell command execution
-  - Technical problem-solving and implementation
+    - Python code execution and analysis
+    - Shell command execution
+    - Technical problem-solving and implementation
 
 - **File Manager ([`src/prompts/file_manager.md`](src/prompts/file_manager.md))**: Handles all file system operations with a focus on properly formatting and saving content in markdown format.
 
 - **Browser ([`src/prompts/browser.md`](src/prompts/browser.md))**: Web interaction specialist that handles:
-  - Website navigation
-  - Page interaction (clicking, typing, scrolling)
-  - Content extraction from web pages
+    - Website navigation
+    - Page interaction (clicking, typing, scrolling)
+    - Content extraction from web pages
 
 #### Prompt System Architecture
 
@@ -380,6 +381,10 @@ make lint
 # Format code
 make format
 ```
+
+## FAQ
+
+Please refer to the [FAQ.md](docs/FAQ.md) for more details.
 
 ## Contributing
 

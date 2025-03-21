@@ -18,7 +18,6 @@ LangManusは、オープンソースコミュニティの素晴らしい仕事�
 ![Demo](./assets/demo.gif)
 
 - [YouTubeで視聴](https://youtu.be/sZCHqrQBUGk)
-- [ビデオをダウンロード](https://github.com/langmanus/langmanus/blob/main/assets/demo.mp4)
 
 ## 目次
 

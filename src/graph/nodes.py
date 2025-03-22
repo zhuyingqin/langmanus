@@ -218,8 +218,28 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
                 goto="supervisor",
             )
             
+        # 获取浏览器指令，如果没有则使用默认指令
+        browser_instruction = state.get("browser_instruction")
+        if not browser_instruction:
+            logger.warning("No browser instruction provided, using last message as instruction")
+            # 尝试从最后一条消息中获取指令
+            for msg in reversed(state.get("messages", [])):
+                if hasattr(msg, "content") and msg.content:
+                    browser_instruction = msg.content
+                    break
+            
+            # 如果仍然没有找到指令，使用默认指令
+            if not browser_instruction:
+                browser_instruction = "浏览最新的相关网页内容并提取重要信息"
+                
+        logger.info(f"执行浏览器任务，指令: {browser_instruction}")
+        
+        # 创建一个临时状态，包含浏览器指令
+        browser_state = deepcopy(state)
+        browser_state["current_instruction"] = browser_instruction
+            
         # 调用浏览器代理
-        result = browser_agent.invoke(state)
+        result = browser_agent.invoke(browser_state)
         logger.info("Browser agent completed task")
         
         # 验证返回结果
@@ -229,7 +249,7 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
                 update={
                     "messages": [
                         HumanMessage(
-                            content="浏览器任务未返回有效结果",
+                            content=f"浏览器任务未返回有效结果。任务指令: {browser_instruction}",
                             name="browser",
                         )
                     ]
@@ -245,7 +265,7 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
                 update={
                     "messages": [
                         HumanMessage(
-                            content="浏览器任务返回了空内容",
+                            content=f"浏览器任务返回了空内容。任务指令: {browser_instruction}",
                             name="browser",
                         )
                     ]
@@ -258,15 +278,22 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
         response_content = repair_json_output(response_content)
         logger.debug(f"Browser agent response: {response_content}")
         
+        # 清除临时的浏览器指令，避免重复使用
+        updates = {
+            "messages": [
+                HumanMessage(
+                    content=response_content,
+                    name="browser",
+                )
+            ]
+        }
+        
+        # 只有在浏览器指令来自于supervisor时才清除它
+        if "browser_instruction" in state:
+            updates["browser_instruction"] = None
+        
         return Command(
-            update={
-                "messages": [
-                    HumanMessage(
-                        content=response_content,
-                        name="browser",
-                    )
-                ]
-            },
+            update=updates,
             goto="supervisor",
         )
     except Exception as e:
@@ -279,7 +306,8 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
                         content=f"执行浏览器任务时发生错误: {str(e)}",
                         name="browser",
                     )
-                ]
+                ],
+                "browser_instruction": None  # 清除浏览器指令
             },
             goto="supervisor",
         )
@@ -337,7 +365,7 @@ def reflection_node(state: State) -> Command[Literal["supervisor", "reporter", "
         
         response = llm.invoke(messages)
         
-        # 验证响应内容
+        # 验证响应内容 是否为空
         if not hasattr(response, "content") or response.content is None:
             logger.error("Reflection returned null content")
             return Command(
@@ -440,6 +468,7 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "reflection"
             
             # 根据反思内容选择合适的代理来处理
             goto = "reporter"  # 默认发送给reporter进行修改
+            browser_instruction = None
             
             if reflection_msg:
                 if "research" in reflection_msg or "information" in reflection_msg or "search" in reflection_msg:
@@ -448,10 +477,17 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "reflection"
                     goto = "coder"
                 elif "web" in reflection_msg or "browse" in reflection_msg or "website" in reflection_msg:
                     goto = "browser"
+                    # 从reflection消息中提取浏览器指令
+                    browser_instruction = f"根据以下反馈对网页内容进行检查和更正: {reflection_msg}"
             
+            # 添加浏览器指令（如果适用）
+            updates = {"revision_processed": True, "next": goto}
+            if goto == "browser" and browser_instruction:
+                updates["browser_instruction"] = browser_instruction
+                
             # 标记已处理revision建议
             return Command(
-                update={"revision_processed": True, "next": goto},
+                update=updates,
                 goto=goto
             )
             
@@ -463,16 +499,46 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "reflection"
             if isinstance(message, BaseMessage) and message.name in TEAM_MEMBERS:
                 message.content = RESPONSE_FORMAT.format(message.name, message.content)
         
-        response = (
-            get_llm_by_type(AGENT_LLM_MAP["supervisor"])
-            .with_structured_output(schema=Router, method="json_mode")
-            .invoke(messages)
-        )
-        goto = response["next"]
+        # 获取LLM响应
+        llm = get_llm_by_type(AGENT_LLM_MAP["supervisor"])
+        
+        # 首先尝试获取带有结构化输出的响应
+        try:
+            response = llm.with_structured_output(schema=Router, method="json_mode").invoke(messages)
+            goto = response["next"]
+            browser_instruction = response.get("browser_instruction")
+        except Exception as e:
+            logger.warning(f"Structured output failed, falling back to regular response: {e}")
+            # 如果结构化输出失败，回退到常规响应
+            regular_response = llm.invoke(messages)
+            
+            if not hasattr(regular_response, "content") or not regular_response.content:
+                logger.error("Supervisor LLM returned empty response")
+                goto = "__end__"
+                browser_instruction = None
+            else:
+                # 尝试从响应中提取路由信息
+                content = regular_response.content.lower()
+                if "finish" in content or "end" in content or "complete" in content:
+                    goto = "FINISH"
+                elif "researcher" in content or "research" in content:
+                    goto = "researcher"
+                elif "coder" in content or "code" in content:
+                    goto = "coder"
+                elif "browser" in content:
+                    goto = "browser"
+                    # 尝试从内容中提取浏览器指令
+                    browser_instruction = f"根据用户请求执行以下浏览任务: {content}"
+                elif "reporter" in content or "report" in content:
+                    goto = "reporter"
+                else:
+                    goto = "__end__"  # 默认结束
+                    
+        # 记录响应日志
         logger.debug(f"Current state messages: {state['messages']}")
-        logger.debug(f"Supervisor response: {response}")
+        logger.debug(f"Supervisor response: goto={goto}")
 
-        # Check if we should trigger reflection
+        # 检查是否需要触发反思
         reflection_triggered = False
         max_reflection_count = 3  # 最大反思次数限制
         current_reflection_count = state.get("reflection_count", 0)
@@ -497,8 +563,31 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "reflection"
                 logger.info("Workflow completed")
         else:
             logger.info(f"Supervisor delegating to: {goto}")
+            
+        # 构建要更新的状态
+        updates = {"next": goto}
+        
+        # 如果是浏览器任务，添加浏览器指令
+        if goto == "browser":
+            # 如果没有明确的浏览器指令，从最近的用户消息中构建一个
+            if not browser_instruction:
+                user_messages = []
+                for msg in reversed(state.get("messages", [])):
+                    if hasattr(msg, "role") and msg.role == "user" and hasattr(msg, "content") and msg.content:
+                        user_messages.append(msg.content)
+                        if len(user_messages) >= 1:  # 只获取最近的一条用户消息
+                            break
+                
+                if user_messages:
+                    browser_instruction = f"根据用户请求，执行以下浏览任务: {user_messages[0]}"
+                else:
+                    browser_instruction = "浏览最新的相关网页内容并提取重要信息"
+                    
+            # 将浏览器指令添加到状态中
+            logger.info(f"浏览器指令: {browser_instruction}")
+            updates["browser_instruction"] = browser_instruction
 
-        return Command(goto=goto, update={"next": goto})
+        return Command(goto=goto, update=updates)
     
     except Exception as e:
         logger.error(f"Error in supervisor node: {str(e)}")

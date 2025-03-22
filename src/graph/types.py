@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 from typing_extensions import TypedDict
 from langgraph.graph import MessagesState
 
@@ -21,8 +21,8 @@ class State(MessagesState):
     TEAM_MEMBERS: list[str]
 
     # Runtime Variables
-    next: str
-    full_plan: str
-    deep_thinking_mode: bool
-    search_before_planning: bool
-    reflection_count: int
+    next: Optional[str] = None
+    full_plan: Optional[str] = None
+    deep_thinking_mode: bool = False
+    search_before_planning: bool = False
+    reflection_count: int = 0

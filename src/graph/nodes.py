@@ -91,47 +91,72 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
 
 
 def reflection_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
-    """Reflection node that critiques and improves the current solution.
+    """反思节点，批评和改进当前解决方案。
     
-    This node analyzes the current state, including all messages and decisions so far,
-    to identify potential improvements or issues with the current approach.
+    该节点分析当前状态，包括所有消息和迄今为止的决策，
+    以识别当前方法的潜在改进或问题。
     """
     logger.info("Reflection agent starting analysis")
+    
+    # 确保state中有消息
+    if not state.get("messages"):
+        logger.warning("No messages found in state, skipping reflection")
+        return Command(
+            update={"reflection_count": 1},
+            goto="__end__",
+        )
+    
     messages = apply_prompt_template("reflection", state)
     
     # Get reflection using reasoning LLM (requires deeper thinking)
     llm = get_llm_by_type("reasoning")
     
-    response = llm.invoke(messages)
-    response_content = response.content
-    
-    # Check if there are issues/improvements to be made
-    needs_revision = "NEEDS_REVISION" in response_content
-    
-    logger.debug(f"Reflection analysis complete. Needs revision: {needs_revision}")
-    logger.debug(f"Reflection content: {response_content}")
-    
-    if needs_revision:
-        # If improvements needed, add reflection message and return to supervisor
+    try:
+        response = llm.invoke(messages)
+        response_content = response.content
+        
+        # Check if there are issues/improvements to be made
+        needs_revision = "NEEDS_REVISION" in response_content
+        
+        logger.debug(f"Reflection analysis complete. Needs revision: {needs_revision}")
+        logger.debug(f"Reflection content: {response_content}")
+        
+        if needs_revision:
+            # If improvements needed, add reflection message and return to supervisor
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content=response_content,
+                            name="reflection",
+                        )
+                    ],
+                    "reflection_count": state.get("reflection_count", 0) + 1,
+                },
+                goto="supervisor",
+            )
+        else:
+            # If no improvements needed, proceed to end
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content=response_content,
+                            name="reflection",
+                        )
+                    ],
+                    "reflection_count": state.get("reflection_count", 0) + 1,
+                },
+                goto="__end__",
+            )
+    except Exception as e:
+        logger.error(f"Error in reflection node: {str(e)}")
+        # 出现错误时，优雅地失败并进入终止状态
         return Command(
             update={
                 "messages": [
                     HumanMessage(
-                        content=response_content,
-                        name="reflection",
-                    )
-                ],
-                "reflection_count": state.get("reflection_count", 0) + 1,
-            },
-            goto="supervisor",
-        )
-    else:
-        # If no improvements needed, proceed to end
-        return Command(
-            update={
-                "messages": [
-                    HumanMessage(
-                        content=response_content,
+                        content="反思过程中出现技术错误，跳过反思阶段。",
                         name="reflection",
                     )
                 ],
@@ -144,44 +169,61 @@ def reflection_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
 def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "reflection", "__end__"]]:
     """Supervisor node that decides which agent should act next."""
     logger.info("Supervisor evaluating next action")
-    messages = apply_prompt_template("supervisor", state)
-    # preprocess messages to make supervisor execute better.
-    messages = deepcopy(messages)
-    for message in messages:
-        if isinstance(message, BaseMessage) and message.name in TEAM_MEMBERS:
-            message.content = RESPONSE_FORMAT.format(message.name, message.content)
-    response = (
-        get_llm_by_type(AGENT_LLM_MAP["supervisor"])
-        .with_structured_output(schema=Router, method="json_mode")
-        .invoke(messages)
-    )
-    goto = response["next"]
-    logger.debug(f"Current state messages: {state['messages']}")
-    logger.debug(f"Supervisor response: {response}")
-
-    # Check if we should trigger reflection
-    reflection_triggered = False
-    max_reflection_count = 3  # 最大反思次数限制
-    current_reflection_count = state.get("reflection_count", 0)
     
-    if goto == "FINISH":
-        # Before finishing, consider if we should reflect on the solution
-        if current_reflection_count < max_reflection_count:
-            last_messages = [msg.content for msg in state["messages"][-3:] if hasattr(msg, "content")]
-            important_step = any(["final" in msg.lower() or "complete" in msg.lower() for msg in last_messages])
-            
-            if important_step:
-                logger.info("Triggering reflection before completion")
-                reflection_triggered = True
-                goto = "reflection"
+    # 确保状态中有必要的字段
+    if not state.get("messages"):
+        logger.warning("No messages in state, ending workflow")
+        return Command(goto="__end__")
+    
+    try:
+        messages = apply_prompt_template("supervisor", state)
+        # preprocess messages to make supervisor execute better.
+        messages = deepcopy(messages)
+        for message in messages:
+            if isinstance(message, BaseMessage) and message.name in TEAM_MEMBERS:
+                message.content = RESPONSE_FORMAT.format(message.name, message.content)
         
-        if not reflection_triggered:
-            goto = "__end__"
-            logger.info("Workflow completed")
-    else:
-        logger.info(f"Supervisor delegating to: {goto}")
+        response = (
+            get_llm_by_type(AGENT_LLM_MAP["supervisor"])
+            .with_structured_output(schema=Router, method="json_mode")
+            .invoke(messages)
+        )
+        goto = response["next"]
+        logger.debug(f"Current state messages: {state['messages']}")
+        logger.debug(f"Supervisor response: {response}")
 
-    return Command(goto=goto, update={"next": goto})
+        # Check if we should trigger reflection
+        reflection_triggered = False
+        max_reflection_count = 3  # 最大反思次数限制
+        current_reflection_count = state.get("reflection_count", 0)
+        
+        if goto == "FINISH":
+            # Before finishing, consider if we should reflect on the solution
+            if current_reflection_count < max_reflection_count:
+                # 从最近的消息中提取内容进行分析
+                last_messages = []
+                for msg in state.get("messages", [])[-3:]:
+                    if hasattr(msg, "content") and msg.content:
+                        last_messages.append(msg.content.lower())
+                
+                # 仅当有足够的内容可以分析且关键词指示任务即将完成时才触发反思
+                if last_messages and any(["final" in msg or "complete" in msg or "conclusion" in msg or "finished" in msg for msg in last_messages]):
+                    logger.info("Triggering reflection before completion")
+                    reflection_triggered = True
+                    goto = "reflection"
+            
+            if not reflection_triggered:
+                goto = "__end__"
+                logger.info("Workflow completed")
+        else:
+            logger.info(f"Supervisor delegating to: {goto}")
+
+        return Command(goto=goto, update={"next": goto})
+    
+    except Exception as e:
+        logger.error(f"Error in supervisor node: {str(e)}")
+        # 出现错误时，优雅地失败并进入终止状态
+        return Command(goto="__end__")
 
 
 def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
@@ -252,6 +294,14 @@ def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     response.content = response_content
 
     return Command(
+        update={
+            "messages": [
+                HumanMessage(
+                    content=response_content,
+                    name="coordinator",
+                )
+            ]
+        },
         goto=goto,
     )
 

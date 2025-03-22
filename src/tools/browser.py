@@ -56,14 +56,22 @@ class BrowserTool(BaseTool):
     def _generate_browser_result(
         self, result_content: str, generated_gif_path: str
     ) -> dict:
+        # 确保结果内容不为空
+        if result_content is None or result_content == "":
+            result_content = "浏览器任务执行完成，但未返回有效内容。请检查任务是否成功或提供更明确的指令。"
+            
         return {
             "result_content": result_content,
             "generated_gif_path": generated_gif_path,
         }
 
     def _run(self, instruction: str) -> str:
-        generated_gif_path = f"{BROWSER_HISTORY_DIR}/{uuid.uuid4()}.gif"
         """Run the browser task synchronously."""
+        generated_gif_path = f"{BROWSER_HISTORY_DIR}/{uuid.uuid4()}.gif"
+        
+        # 记录开始执行浏览器任务
+        logger.info(f"开始执行浏览器任务: {instruction}")
+        
         self._agent = BrowserAgent(
             task=instruction,  # Will be set per request
             llm=vl_llm,
@@ -77,20 +85,35 @@ class BrowserTool(BaseTool):
             try:
                 result = loop.run_until_complete(self._agent.run())
 
+                # 检查结果并生成有效的响应
                 if isinstance(result, AgentHistoryList):
+                    final_result = result.final_result()
+                    # 确保最终结果不为空
+                    if final_result is None or final_result == "":
+                        final_result = "浏览器任务执行完成，但未返回结果。GIF截图可能提供了更多信息。"
+                    
                     return json.dumps(
                         self._generate_browser_result(
-                            result.final_result(), generated_gif_path
+                            final_result, generated_gif_path
                         )
                     )
                 else:
+                    # 确保结果不为空
+                    if result is None or result == "":
+                        result = "浏览器任务执行完成，但未返回文本结果。GIF截图可能提供了更多信息。"
+                        
                     return json.dumps(
                         self._generate_browser_result(result, generated_gif_path)
                     )
             finally:
                 loop.close()
         except Exception as e:
-            return f"Error executing browser task: {str(e)}"
+            error_message = f"执行浏览器任务时出错: {str(e)}"
+            logger.error(error_message)
+            # 返回错误信息和GIF路径，确保返回值有效
+            return json.dumps(
+                self._generate_browser_result(error_message, generated_gif_path)
+            )
 
     async def terminate(self):
         """Terminate the browser agent if it exists."""
@@ -104,6 +127,10 @@ class BrowserTool(BaseTool):
     async def _arun(self, instruction: str) -> str:
         """Run the browser task asynchronously."""
         generated_gif_path = f"{BROWSER_HISTORY_DIR}/{uuid.uuid4()}.gif"
+        
+        # 记录开始执行浏览器任务
+        logger.info(f"开始异步执行浏览器任务: {instruction}")
+        
         self._agent = BrowserAgent(
             task=instruction,
             llm=vl_llm,
@@ -112,18 +139,34 @@ class BrowserTool(BaseTool):
         )
         try:
             result = await self._agent.run()
+            
+            # 检查结果并生成有效的响应
             if isinstance(result, AgentHistoryList):
+                final_result = result.final_result()
+                # 确保最终结果不为空
+                if final_result is None or final_result == "":
+                    final_result = "浏览器任务执行完成，但未返回结果。GIF截图可能提供了更多信息。"
+                
                 return json.dumps(
                     self._generate_browser_result(
-                        result.final_result(), generated_gif_path
+                        final_result, generated_gif_path
                     )
                 )
             else:
+                # 确保结果不为空
+                if result is None or result == "":
+                    result = "浏览器任务执行完成，但未返回文本结果。GIF截图可能提供了更多信息。"
+                    
                 return json.dumps(
                     self._generate_browser_result(result, generated_gif_path)
                 )
         except Exception as e:
-            return f"Error executing browser task: {str(e)}"
+            error_message = f"异步执行浏览器任务时出错: {str(e)}"
+            logger.error(error_message)
+            # 返回错误信息和GIF路径，确保返回值有效
+            return json.dumps(
+                self._generate_browser_result(error_message, generated_gif_path)
+            )
         finally:
             await self.terminate()
 

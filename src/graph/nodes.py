@@ -90,7 +90,58 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
     )
 
 
-def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
+def reflection_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
+    """Reflection node that critiques and improves the current solution.
+    
+    This node analyzes the current state, including all messages and decisions so far,
+    to identify potential improvements or issues with the current approach.
+    """
+    logger.info("Reflection agent starting analysis")
+    messages = apply_prompt_template("reflection", state)
+    
+    # Get reflection using reasoning LLM (requires deeper thinking)
+    llm = get_llm_by_type("reasoning")
+    
+    response = llm.invoke(messages)
+    response_content = response.content
+    
+    # Check if there are issues/improvements to be made
+    needs_revision = "NEEDS_REVISION" in response_content
+    
+    logger.debug(f"Reflection analysis complete. Needs revision: {needs_revision}")
+    logger.debug(f"Reflection content: {response_content}")
+    
+    if needs_revision:
+        # If improvements needed, add reflection message and return to supervisor
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=response_content,
+                        name="reflection",
+                    )
+                ],
+                "reflection_count": state.get("reflection_count", 0) + 1,
+            },
+            goto="supervisor",
+        )
+    else:
+        # If no improvements needed, proceed to end
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=response_content,
+                        name="reflection",
+                    )
+                ],
+                "reflection_count": state.get("reflection_count", 0) + 1,
+            },
+            goto="__end__",
+        )
+
+
+def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "reflection", "__end__"]]:
     """Supervisor node that decides which agent should act next."""
     logger.info("Supervisor evaluating next action")
     messages = apply_prompt_template("supervisor", state)
@@ -108,9 +159,25 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "__end__"]]:
     logger.debug(f"Current state messages: {state['messages']}")
     logger.debug(f"Supervisor response: {response}")
 
+    # Check if we should trigger reflection
+    reflection_triggered = False
+    max_reflection_count = 3  # 最大反思次数限制
+    current_reflection_count = state.get("reflection_count", 0)
+    
     if goto == "FINISH":
-        goto = "__end__"
-        logger.info("Workflow completed")
+        # Before finishing, consider if we should reflect on the solution
+        if current_reflection_count < max_reflection_count:
+            last_messages = [msg.content for msg in state["messages"][-3:] if hasattr(msg, "content")]
+            important_step = any(["final" in msg.lower() or "complete" in msg.lower() for msg in last_messages])
+            
+            if important_step:
+                logger.info("Triggering reflection before completion")
+                reflection_triggered = True
+                goto = "reflection"
+        
+        if not reflection_triggered:
+            goto = "__end__"
+            logger.info("Workflow completed")
     else:
         logger.info(f"Supervisor delegating to: {goto}")
 

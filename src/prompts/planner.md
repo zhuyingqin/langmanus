@@ -52,15 +52,9 @@ interface Plan {
 # Notes
 
 - Ensure the plan is clear and logical, with tasks assigned to the correct agent based on their capabilities.
-{% for agent in TEAM_MEMBERS %}
-{% if agent == "browser" %}
 - `browser` is slow and expansive. Use `browser` **only** for tasks requiring **direct interaction** with web pages.
 - `browser` already delivers comprehensive results, so there is no need to analyze its output further using `researcher`.
-{% elif agent == "coder" %}
 - Always use `coder` for mathematical computations.
 - Always use `coder` to get stock information via `yfinance`.
-{% elif agent == "reporter" %}
 - Always use `reporter` to present your final report. Reporter can only be used once as the last step.
-{% endif %}
-{% endfor %}
 - Always Use the same language as the user.

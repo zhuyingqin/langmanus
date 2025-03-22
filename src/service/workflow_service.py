@@ -35,34 +35,18 @@ current_browser_tool: Optional[browser_tool] = None
 
 async def run_agent_workflow(
     user_input_messages: list,
-    debug: Optional[bool] = False,
-    deep_thinking_mode: Optional[bool] = False,
-    search_before_planning: Optional[bool] = False,
-    team_members: Optional[list] = None,
+    debug: bool = False,
+    deep_thinking_mode: bool = False,
+    search_before_planning: bool = False,
 ):
-    """Run the agent workflow to process and respond to user input messages.
-
-    This function orchestrates the execution of various agents in a workflow to handle
-    user requests. It manages agent communication, tool usage, and generates streaming
-    events for the workflow progress.
+    """Run the agent workflow with the given user input.
 
     Args:
-        user_input_messages: List of user messages to process in the workflow
-        debug: If True, enables debug level logging for detailed execution information
-        deep_thinking_mode: If True, enables more thorough analysis and consideration
-            in agent responses
-        search_before_planning: If True, performs preliminary research before creating
-            the execution plan
-        team_members: Optional list of specific team members to involve in the workflow.
-            If None, uses default TEAM_MEMBERS configuration
+        user_input_messages: The user request messages
+        debug: If True, enables debug level logging
 
     Returns:
-        Yields various event dictionaries containing workflow state and progress information,
-        including agent activities, tool calls, and the final workflow state
-
-    Raises:
-        ValueError: If user_input_messages is empty
-        asyncio.CancelledError: If the workflow is cancelled during execution
+        The final state after the workflow completes
     """
     if not user_input_messages:
         raise ValueError("Input could not be empty")
@@ -74,9 +58,7 @@ async def run_agent_workflow(
 
     workflow_id = str(uuid.uuid4())
 
-    team_members = team_members if team_members else TEAM_MEMBERS
-
-    streaming_llm_agents = [*team_members, "planner", "coordinator"]
+    streaming_llm_agents = [*TEAM_MEMBERS, "planner", "coordinator"]
 
     # Reset coordinator cache at the start of each workflow
     global coordinator_cache, current_browser_tool
@@ -89,7 +71,7 @@ async def run_agent_workflow(
         async for event in graph.astream_events(
             {
                 # Constants
-                "TEAM_MEMBERS": team_members,
+                "TEAM_MEMBERS": TEAM_MEMBERS,
                 # Runtime Variables
                 "messages": user_input_messages,
                 "deep_thinking_mode": deep_thinking_mode,
@@ -201,7 +183,7 @@ async def run_agent_workflow(
                                 "delta": {"content": content},
                             },
                         }
-            elif kind == "on_tool_start" and node in team_members:
+            elif kind == "on_tool_start" and node in TEAM_MEMBERS:
                 ydata = {
                     "event": "tool_call",
                     "data": {
@@ -210,7 +192,7 @@ async def run_agent_workflow(
                         "tool_input": data.get("input"),
                     },
                 }
-            elif kind == "on_tool_end" and node in team_members:
+            elif kind == "on_tool_end" and node in TEAM_MEMBERS:
                 ydata = {
                     "event": "tool_call_result",
                     "data": {

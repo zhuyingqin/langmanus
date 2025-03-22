@@ -1,4 +1,4 @@
-# 🦜🤖 LangManus
+# LangManus
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -13,32 +13,14 @@ LangManus 是一个社区驱动的 AI 自动化框架，它建立在开源社区
 
 ## 演示视频
 
-**Task**: Calculate the influence index of DeepSeek R1 on HuggingFace. This index can be designed by considering a weighted sum of factors such as followers, downloads, and likes.
+> **Task**: Calculate the influence index of DeepSeek R1 on HuggingFace. This index can be designed by considering a weighted sum of factors such as followers, downloads, and likes.
+>
+> **任务**：计算 DeepSeek R1 在 HuggingFace 上的影响力指数。该指数可以通过考虑粉丝、下载量和点赞数等权重因素来设计。
 
-**LangManus的全自动计划与解决方案**:
-
-1. **收集最新信息**  
-   通过在线搜索获取关于“DeepSeek R1”、“HuggingFace”以及相关主题的最新信息。
-
-2. **访问HuggingFace官网**  
-   使用 Chromium 实例访问 HuggingFace 的官方网站，搜索“DeepSeek R1”，并检索最新数据，包括关注者数量、点赞数、下载量及其他相关指标。
-
-3. **查找模型影响力计算公式**  
-   使用搜索引擎和网页抓取技术，寻找计算模型影响力的相关公式或方法。
-
-4. **使用Python计算影响力指数**  
-   基于收集到的数据，使用Python编程计算DeepSeek R1的影响力指数。
-
-5. **生成综合报告**  
-   将分析结果整理成一份全面的报告并呈现给用户。
-
-![Demo](./assets/demo.gif)
+[![Demo](./assets/demo.gif)](./assets/demo.mp4)
 
 - [在 YouTube 上观看](https://youtu.be/sZCHqrQBUGk)
-- 中文自媒体报道
-    - 01Coder - Manus 开源平替 - LangManus（LangChain力荐）
-        - [YouTube](https://www.youtube.com/watch?v=XzCmPOfd0D0&lc=UgyNFuKmya8R6rVm_l94AaABAg&ab_channel=01Coder)
-        - [B站](https://www.bilibili.com/video/BV1SeXqYfEop/)
+- [下载视频](https://github.com/langmanus/langmanus/blob/main/assets/demo.mp4)
 
 ## 目录
 
@@ -151,8 +133,6 @@ LangManus 实现了一个分层的多智能体系统，其中有一个主管智�
 我们致力于回馈社区，欢迎各种形式的贡献——无论是代码、文档、问题报告还是功能建议。
 
 ## 安装设置
-
-> 你也可以参考 01Coder 发布的[这部影片](https://www.youtube.com/watch?v=XzCmPOfd0D0&lc=UgyNFuKmya8R6rVm_l94AaABAg&ab_channel=01Coder)
 
 ### 前置要求
 
@@ -267,8 +247,6 @@ ln -s ../../pre-commit .git/hooks/pre-commit
 - 运行代码格式化（`make format`）
 - 将任何重新格式化的文件添加回暂存区
 - 如果有任何代码检查或格式化错误，阻止提交
-
-
 
 ## 使用方法
 
@@ -413,10 +391,3 @@ make format
 ## 致谢
 
 特别感谢所有让 LangManus 成为可能的开源项目和贡献者。我们站在巨人的肩膀上。
-
-我们特别要感谢以下项目：
-- [LangChain](https://github.com/langchain-ai/langchain)：为我们提供了出色的框架，支撑着我们的 LLM 交互和链式操作
-- [LangGraph](https://github.com/langchain-ai/langgraph)：为我们的复杂多智能体编排提供支持
-- [Browser-use](https://pypi.org/project/browser-use/)：提供浏览器控制能力
-
-这些优秀的项目构成了 LangManus 的基石，展现了开源协作的力量。

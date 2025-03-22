@@ -12,4 +12,5 @@ AGENT_LLM_MAP: dict[str, LLMType] = {
     "coder": "basic",  # 编程任务使用basic llm
     "browser": "vision",  # 浏览器操作使用vision llm
     "reporter": "basic",  # 编写报告使用basic llm
+    "reflection": "reasoning",  # 反思功能使用reasoning llm以获得更深入的分析
 }

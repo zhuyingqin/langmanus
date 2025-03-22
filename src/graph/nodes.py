@@ -285,7 +285,7 @@ def browser_node(state: State) -> Command[Literal["supervisor"]]:
         )
 
 
-def reflection_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
+def reflection_node(state: State) -> Command[Literal["supervisor", "reporter", "__end__"]]:
     """反思节点，批评和改进当前解决方案。
     
     该节点分析当前状态，包括所有消息和迄今为止的决策，
@@ -305,9 +305,29 @@ def reflection_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
                             name="reflection",
                         )
                     ],
-                    "reflection_count": state.get("reflection_count", 0) + 1
+                    "reflection_count": state.get("reflection_count", 0) + 1,
+                    "reflection_completed": True
                 },
                 goto="__end__",
+            )
+            
+        # 检查反思次数，防止无限循环
+        max_reflection_count = 3
+        current_reflection_count = state.get("reflection_count", 0)
+        
+        if current_reflection_count >= max_reflection_count:
+            logger.warning(f"Reached maximum reflection count ({max_reflection_count}), proceeding to finish")
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content=f"已达到最大反思次数({max_reflection_count})，继续执行任务。",
+                            name="reflection",
+                        )
+                    ],
+                    "reflection_completed": True
+                },
+                goto="reporter",
             )
         
         messages = apply_prompt_template("reflection", state)
@@ -328,7 +348,8 @@ def reflection_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
                             name="reflection",
                         )
                     ],
-                    "reflection_count": state.get("reflection_count", 0) + 1
+                    "reflection_count": state.get("reflection_count", 0) + 1,
+                    "reflection_completed": True
                 },
                 goto="__end__",
             )
@@ -341,8 +362,12 @@ def reflection_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
         logger.debug(f"Reflection analysis complete. Needs revision: {needs_revision}")
         logger.debug(f"Reflection content: {response_content}")
         
+        # 更新反思计数
+        updated_reflection_count = state.get("reflection_count", 0) + 1
+        
         if needs_revision:
-            # If improvements needed, add reflection message and return to supervisor
+            # 如果需要修改，添加reflection消息并将其作为下一步的输入
+            # 返回给supervisor进行处理
             return Command(
                 update={
                     "messages": [
@@ -351,12 +376,13 @@ def reflection_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
                             name="reflection",
                         )
                     ],
-                    "reflection_count": state.get("reflection_count", 0) + 1,
+                    "reflection_count": updated_reflection_count,
+                    "needs_revision": True
                 },
-                goto="supervisor",
+                goto="reporter",  # 将反思结果交给reporter处理
             )
         else:
-            # If no improvements needed, proceed to end
+            # 如果不需要修改，标记反思已完成，结束流程
             return Command(
                 update={
                     "messages": [
@@ -365,7 +391,9 @@ def reflection_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
                             name="reflection",
                         )
                     ],
-                    "reflection_count": state.get("reflection_count", 0) + 1,
+                    "reflection_count": updated_reflection_count,
+                    "reflection_completed": True,
+                    "needs_revision": False
                 },
                 goto="__end__",
             )
@@ -381,6 +409,7 @@ def reflection_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
                     )
                 ],
                 "reflection_count": state.get("reflection_count", 0) + 1,
+                "reflection_completed": True
             },
             goto="__end__",
         )
@@ -396,6 +425,37 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "reflection"
         return Command(goto="__end__")
     
     try:
+        # 检查是否已处理过reflection结果
+        if state.get("needs_revision") and not state.get("revision_processed"):
+            logger.info("Reflection suggested revisions, sending to appropriate agent for corrections")
+            
+            # 根据需要修改的内容，决定将任务分配给哪个代理
+            # 这里可以分析反思消息内容，决定哪个代理最适合处理修改
+            # 简单示例：查找关键词决定
+            reflection_msg = None
+            for msg in reversed(state.get("messages", [])):
+                if hasattr(msg, "name") and msg.name == "reflection" and hasattr(msg, "content"):
+                    reflection_msg = msg.content.lower()
+                    break
+            
+            # 根据反思内容选择合适的代理来处理
+            goto = "reporter"  # 默认发送给reporter进行修改
+            
+            if reflection_msg:
+                if "research" in reflection_msg or "information" in reflection_msg or "search" in reflection_msg:
+                    goto = "researcher"
+                elif "code" in reflection_msg or "calculation" in reflection_msg or "compute" in reflection_msg:
+                    goto = "coder"
+                elif "web" in reflection_msg or "browse" in reflection_msg or "website" in reflection_msg:
+                    goto = "browser"
+            
+            # 标记已处理revision建议
+            return Command(
+                update={"revision_processed": True, "next": goto},
+                goto=goto
+            )
+            
+        # 正常的supervisor处理逻辑
         messages = apply_prompt_template("supervisor", state)
         # preprocess messages to make supervisor execute better.
         messages = deepcopy(messages)
@@ -419,7 +479,7 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "reflection"
         
         if goto == "FINISH":
             # Before finishing, consider if we should reflect on the solution
-            if current_reflection_count < max_reflection_count:
+            if current_reflection_count < max_reflection_count and not state.get("reflection_completed"):
                 # 从最近的消息中提取内容进行分析
                 last_messages = []
                 for msg in state.get("messages", [])[-3:]:
@@ -639,7 +699,35 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
                 goto="supervisor",
             )
             
-        messages = apply_prompt_template("reporter", state)
+        # 检查是否需要处理反思建议
+        is_revision = state.get("needs_revision") and state.get("revision_processed")
+        
+        if is_revision:
+            logger.info("Reporter processing reflection feedback")
+            # 为reporter准备特殊模板，包括reflection的反馈
+            # 获取最近的反思消息
+            reflection_msg = None
+            for msg in reversed(state.get("messages", [])):
+                if hasattr(msg, "name") and msg.name == "reflection" and hasattr(msg, "content"):
+                    reflection_msg = msg.content
+                    break
+                    
+            if reflection_msg:
+                # 创建一个临时状态，包含反思信息
+                temp_state = deepcopy(state)
+                temp_state["reflection_feedback"] = reflection_msg
+                messages = apply_prompt_template("reporter_revision", temp_state)
+                
+                # 如果reporter_revision模板不存在，使用普通模板
+                if not messages or (isinstance(messages, list) and len(messages) == 1 and "Error in template processing" in messages[0].get("content", "")):
+                    logger.warning("reporter_revision template not found, using standard reporter template")
+                    messages = apply_prompt_template("reporter", state)
+            else:
+                messages = apply_prompt_template("reporter", state)
+        else:
+            # 正常报告生成
+            messages = apply_prompt_template("reporter", state)
+            
         response = get_llm_by_type(AGENT_LLM_MAP["reporter"]).invoke(messages)
         logger.debug(f"Current state messages: {state['messages']}")
         
@@ -663,15 +751,25 @@ def reporter_node(state: State) -> Command[Literal["supervisor"]]:
         response_content = repair_json_output(response_content)
         logger.debug(f"reporter response: {response_content}")
 
+        # 添加状态更新，清除反思相关标记
+        updates = {
+            "messages": [
+                HumanMessage(
+                    content=response_content,
+                    name="reporter",
+                )
+            ]
+        }
+        
+        # 如果这是修订版本，标记修订已完成
+        if is_revision:
+            updates["revision_processed"] = True
+            updates["needs_revision"] = False
+            updates["reflection_completed"] = True
+            logger.info("Report revision completed")
+
         return Command(
-            update={
-                "messages": [
-                    HumanMessage(
-                        content=response_content,
-                        name="reporter",
-                    )
-                ]
-            },
+            update=updates,
             goto="supervisor",
         )
     except Exception as e:

@@ -27,67 +27,262 @@ RESPONSE_FORMAT = "Response from {}:\n\n<response>\n{}\n</response>\n\n*Please e
 def research_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the researcher agent that performs research tasks."""
     logger.info("Research agent starting task")
-    result = research_agent.invoke(state)
-    logger.info("Research agent completed task")
-    response_content = result["messages"][-1].content
-    # 尝试修复可能的JSON输出
-    response_content = repair_json_output(response_content)
-    logger.debug(f"Research agent response: {response_content}")
-    return Command(
-        update={
-            "messages": [
-                HumanMessage(
-                    content=response_content,
-                    name="researcher",
-                )
-            ]
-        },
-        goto="supervisor",
-    )
+    
+    try:
+        # 验证输入状态
+        if not state.get("messages"):
+            logger.warning("No messages in state for research agent, ending early")
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content="无法执行研究任务：输入消息为空",
+                            name="researcher",
+                        )
+                    ]
+                },
+                goto="supervisor",
+            )
+            
+        # 调用研究代理
+        result = research_agent.invoke(state)
+        logger.info("Research agent completed task")
+        
+        # 验证返回结果
+        if not result or "messages" not in result or not result["messages"]:
+            logger.error("Research agent returned empty result")
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content="研究任务未返回有效结果",
+                            name="researcher",
+                        )
+                    ]
+                },
+                goto="supervisor",
+            )
+            
+        # 获取最后一条消息内容
+        last_message = result["messages"][-1]
+        if not hasattr(last_message, "content") or last_message.content is None:
+            logger.error("Last message from research agent has null content")
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content="研究任务返回了空内容",
+                            name="researcher",
+                        )
+                    ]
+                },
+                goto="supervisor",
+            )
+            
+        response_content = last_message.content
+        # 尝试修复可能的JSON输出
+        response_content = repair_json_output(response_content)
+        logger.debug(f"Research agent response: {response_content}")
+        
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=response_content,
+                        name="researcher",
+                    )
+                ]
+            },
+            goto="supervisor",
+        )
+    except Exception as e:
+        logger.error(f"Error in research node: {str(e)}")
+        # 发生错误时提供友好的错误消息
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"执行研究任务时发生错误: {str(e)}",
+                        name="researcher",
+                    )
+                ]
+            },
+            goto="supervisor",
+        )
 
 
 def code_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the coder agent that executes Python code."""
     logger.info("Code agent starting task")
-    result = coder_agent.invoke(state)
-    logger.info("Code agent completed task")
-    response_content = result["messages"][-1].content
-    # 尝试修复可能的JSON输出
-    response_content = repair_json_output(response_content)
-    logger.debug(f"Code agent response: {response_content}")
-    return Command(
-        update={
-            "messages": [
-                HumanMessage(
-                    content=response_content,
-                    name="coder",
-                )
-            ]
-        },
-        goto="supervisor",
-    )
+    
+    try:
+        # 验证输入状态
+        if not state.get("messages"):
+            logger.warning("No messages in state for code agent, ending early")
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content="无法执行代码任务：输入消息为空",
+                            name="coder",
+                        )
+                    ]
+                },
+                goto="supervisor",
+            )
+            
+        # 调用代码代理
+        result = coder_agent.invoke(state)
+        logger.info("Code agent completed task")
+        
+        # 验证返回结果
+        if not result or "messages" not in result or not result["messages"]:
+            logger.error("Code agent returned empty result")
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content="代码任务未返回有效结果",
+                            name="coder",
+                        )
+                    ]
+                },
+                goto="supervisor",
+            )
+            
+        # 获取最后一条消息内容
+        last_message = result["messages"][-1]
+        if not hasattr(last_message, "content") or last_message.content is None:
+            logger.error("Last message from code agent has null content")
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content="代码任务返回了空内容",
+                            name="coder",
+                        )
+                    ]
+                },
+                goto="supervisor",
+            )
+            
+        response_content = last_message.content
+        # 尝试修复可能的JSON输出
+        response_content = repair_json_output(response_content)
+        logger.debug(f"Code agent response: {response_content}")
+        
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=response_content,
+                        name="coder",
+                    )
+                ]
+            },
+            goto="supervisor",
+        )
+    except Exception as e:
+        logger.error(f"Error in code node: {str(e)}")
+        # 发生错误时提供友好的错误消息
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"执行代码任务时发生错误: {str(e)}",
+                        name="coder",
+                    )
+                ]
+            },
+            goto="supervisor",
+        )
 
 
 def browser_node(state: State) -> Command[Literal["supervisor"]]:
     """Node for the browser agent that performs web browsing tasks."""
     logger.info("Browser agent starting task")
-    result = browser_agent.invoke(state)
-    logger.info("Browser agent completed task")
-    response_content = result["messages"][-1].content
-    # 尝试修复可能的JSON输出
-    response_content = repair_json_output(response_content)
-    logger.debug(f"Browser agent response: {response_content}")
-    return Command(
-        update={
-            "messages": [
-                HumanMessage(
-                    content=response_content,
-                    name="browser",
-                )
-            ]
-        },
-        goto="supervisor",
-    )
+    
+    try:
+        # 验证输入状态
+        if not state.get("messages"):
+            logger.warning("No messages in state for browser agent, ending early")
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content="无法执行浏览器任务：输入消息为空",
+                            name="browser",
+                        )
+                    ]
+                },
+                goto="supervisor",
+            )
+            
+        # 调用浏览器代理
+        result = browser_agent.invoke(state)
+        logger.info("Browser agent completed task")
+        
+        # 验证返回结果
+        if not result or "messages" not in result or not result["messages"]:
+            logger.error("Browser agent returned empty result")
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content="浏览器任务未返回有效结果",
+                            name="browser",
+                        )
+                    ]
+                },
+                goto="supervisor",
+            )
+            
+        # 获取最后一条消息内容
+        last_message = result["messages"][-1]
+        if not hasattr(last_message, "content") or last_message.content is None:
+            logger.error("Last message from browser agent has null content")
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content="浏览器任务返回了空内容",
+                            name="browser",
+                        )
+                    ]
+                },
+                goto="supervisor",
+            )
+            
+        response_content = last_message.content
+        # 尝试修复可能的JSON输出
+        response_content = repair_json_output(response_content)
+        logger.debug(f"Browser agent response: {response_content}")
+        
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=response_content,
+                        name="browser",
+                    )
+                ]
+            },
+            goto="supervisor",
+        )
+    except Exception as e:
+        logger.error(f"Error in browser node: {str(e)}")
+        # 发生错误时提供友好的错误消息
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"执行浏览器任务时发生错误: {str(e)}",
+                        name="browser",
+                    )
+                ]
+            },
+            goto="supervisor",
+        )
 
 
 def reflection_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
@@ -98,21 +293,46 @@ def reflection_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     """
     logger.info("Reflection agent starting analysis")
     
-    # 确保state中有消息
-    if not state.get("messages"):
-        logger.warning("No messages found in state, skipping reflection")
-        return Command(
-            update={"reflection_count": 1},
-            goto="__end__",
-        )
-    
-    messages = apply_prompt_template("reflection", state)
-    
-    # Get reflection using reasoning LLM (requires deeper thinking)
-    llm = get_llm_by_type("reasoning")
-    
     try:
+        # 确保state中有消息
+        if not state.get("messages"):
+            logger.warning("No messages found in state, skipping reflection")
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content="无法执行反思：输入消息为空",
+                            name="reflection",
+                        )
+                    ],
+                    "reflection_count": state.get("reflection_count", 0) + 1
+                },
+                goto="__end__",
+            )
+        
+        messages = apply_prompt_template("reflection", state)
+        
+        # Get reflection using reasoning LLM (requires deeper thinking)
+        llm = get_llm_by_type("reasoning")
+        
         response = llm.invoke(messages)
+        
+        # 验证响应内容
+        if not hasattr(response, "content") or response.content is None:
+            logger.error("Reflection returned null content")
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content="反思任务失败：返回了空内容",
+                            name="reflection",
+                        )
+                    ],
+                    "reflection_count": state.get("reflection_count", 0) + 1
+                },
+                goto="__end__",
+            )
+            
         response_content = response.content
         
         # Check if there are issues/improvements to be made
@@ -156,7 +376,7 @@ def reflection_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
             update={
                 "messages": [
                     HumanMessage(
-                        content="反思过程中出现技术错误，跳过反思阶段。",
+                        content=f"反思过程中出现技术错误：{str(e)}",
                         name="reflection",
                     )
                 ],
@@ -229,102 +449,242 @@ def supervisor_node(state: State) -> Command[Literal[*TEAM_MEMBERS, "reflection"
 def planner_node(state: State) -> Command[Literal["supervisor", "__end__"]]:
     """Planner node that generate the full plan."""
     logger.info("Planner generating full plan")
-    messages = apply_prompt_template("planner", state)
-    # whether to enable deep thinking mode
-    llm = get_llm_by_type("basic")
-    if state.get("deep_thinking_mode"):
-        llm = get_llm_by_type("reasoning")
-    if state.get("search_before_planning"):
-        searched_content = tavily_tool.invoke({"query": state["messages"][-1].content})
-        if isinstance(searched_content, list):
-            messages = deepcopy(messages)
-            messages[
-                -1
-            ].content += f"\n\n# Relative Search Results\n\n{json.dumps([{'title': elem['title'], 'content': elem['content']} for elem in searched_content], ensure_ascii=False)}"
-        else:
-            logger.error(
-                f"Tavily search returned malformed response: {searched_content}"
-            )
-    stream = llm.stream(messages)
-    full_response = ""
-    for chunk in stream:
-        full_response += chunk.content
-    logger.debug(f"Current state messages: {state['messages']}")
-    logger.debug(f"Planner response: {full_response}")
-
-    if full_response.startswith("```json"):
-        full_response = full_response.removeprefix("```json")
-
-    if full_response.endswith("```"):
-        full_response = full_response.removesuffix("```")
-
-    goto = "supervisor"
+    
     try:
-        repaired_response = json_repair.loads(full_response)
-        full_response = json.dumps(repaired_response)
-    except json.JSONDecodeError:
-        logger.warning("Planner response is not a valid JSON")
-        goto = "__end__"
+        # 验证输入状态
+        if not state.get("messages"):
+            logger.warning("No messages in state for planner, ending early")
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content="无法执行计划任务：输入消息为空",
+                            name="planner",
+                        )
+                    ],
+                    "full_plan": "{}"
+                },
+                goto="__end__",
+            )
+            
+        messages = apply_prompt_template("planner", state)
+        # whether to enable deep thinking mode
+        llm = get_llm_by_type("basic")
+        if state.get("deep_thinking_mode"):
+            llm = get_llm_by_type("reasoning")
+            
+        # 执行搜索（如果启用）
+        if state.get("search_before_planning"):
+            try:
+                searched_content = tavily_tool.invoke({"query": state["messages"][-1].content})
+                if isinstance(searched_content, list):
+                    messages = deepcopy(messages)
+                    messages[
+                        -1
+                    ].content += f"\n\n# Relative Search Results\n\n{json.dumps([{'title': elem['title'], 'content': elem['content']} for elem in searched_content], ensure_ascii=False)}"
+                else:
+                    logger.error(
+                        f"Tavily search returned malformed response: {searched_content}"
+                    )
+            except Exception as e:
+                logger.error(f"Error during search before planning: {str(e)}")
+                
+        # 流式获取响应
+        stream = llm.stream(messages)
+        full_response = ""
+        for chunk in stream:
+            if not hasattr(chunk, "content") or chunk.content is None:
+                continue
+            full_response += chunk.content
+            
+        logger.debug(f"Current state messages: {state['messages']}")
+        logger.debug(f"Planner response: {full_response}")
 
-    return Command(
-        update={
-            "messages": [HumanMessage(content=full_response, name="planner")],
-            "full_plan": full_response,
-        },
-        goto=goto,
-    )
+        # 处理响应格式
+        if full_response.startswith("```json"):
+            full_response = full_response.removeprefix("```json")
+
+        if full_response.endswith("```"):
+            full_response = full_response.removesuffix("```")
+
+        # 验证和修复JSON
+        goto = "supervisor"
+        try:
+            repaired_response = json_repair.loads(full_response)
+            full_response = json.dumps(repaired_response)
+        except json.JSONDecodeError:
+            logger.warning("Planner response is not a valid JSON")
+            goto = "__end__"
+            full_response = "{\"error\": \"无法解析计划\"}"
+
+        return Command(
+            update={
+                "messages": [HumanMessage(content=full_response, name="planner")],
+                "full_plan": full_response,
+            },
+            goto=goto,
+        )
+    except Exception as e:
+        logger.error(f"Error in planner node: {str(e)}")
+        # 发生错误时提供友好的错误消息
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"执行计划任务时发生错误: {str(e)}",
+                        name="planner",
+                    )
+                ],
+                "full_plan": "{\"error\": \"计划生成失败\"}"
+            },
+            goto="__end__",
+        )
 
 
 def coordinator_node(state: State) -> Command[Literal["planner", "__end__"]]:
     """Coordinator node that communicate with customers."""
     logger.info("Coordinator talking.")
-    messages = apply_prompt_template("coordinator", state)
-    response = get_llm_by_type(AGENT_LLM_MAP["coordinator"]).invoke(messages)
-    logger.debug(f"Current state messages: {state['messages']}")
-    response_content = response.content
-    # 尝试修复可能的JSON输出
-    response_content = repair_json_output(response_content)
-    logger.debug(f"Coordinator response: {response_content}")
+    
+    try:
+        # 验证输入状态
+        if not state.get("messages"):
+            logger.warning("No messages in state for coordinator, ending early")
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content="无法执行协调任务：输入消息为空",
+                            name="coordinator",
+                        )
+                    ]
+                },
+                goto="__end__",
+            )
+            
+        messages = apply_prompt_template("coordinator", state)
+        response = get_llm_by_type(AGENT_LLM_MAP["coordinator"]).invoke(messages)
+        logger.debug(f"Current state messages: {state['messages']}")
+        
+        # 验证响应内容
+        if not hasattr(response, "content") or response.content is None:
+            logger.error("Coordinator returned null content")
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content="协调任务失败：返回了空内容",
+                            name="coordinator",
+                        )
+                    ]
+                },
+                goto="__end__",
+            )
+            
+        response_content = response.content
+        # 尝试修复可能的JSON输出
+        response_content = repair_json_output(response_content)
+        logger.debug(f"Coordinator response: {response_content}")
 
-    goto = "__end__"
-    if "handoff_to_planner" in response_content:
-        goto = "planner"
+        goto = "__end__"
+        if "handoff_to_planner" in response_content:
+            goto = "planner"
 
-    # 更新response.content为修复后的内容
-    response.content = response_content
+        # 更新response.content为修复后的内容
+        response.content = response_content
 
-    return Command(
-        update={
-            "messages": [
-                HumanMessage(
-                    content=response_content,
-                    name="coordinator",
-                )
-            ]
-        },
-        goto=goto,
-    )
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=response_content,
+                        name="coordinator",
+                    )
+                ]
+            },
+            goto=goto,
+        )
+    except Exception as e:
+        logger.error(f"Error in coordinator node: {str(e)}")
+        # 发生错误时提供友好的错误消息
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"执行协调任务时发生错误: {str(e)}",
+                        name="coordinator",
+                    )
+                ]
+            },
+            goto="__end__",
+        )
 
 
 def reporter_node(state: State) -> Command[Literal["supervisor"]]:
     """Reporter node that write a final report."""
     logger.info("Reporter write final report")
-    messages = apply_prompt_template("reporter", state)
-    response = get_llm_by_type(AGENT_LLM_MAP["reporter"]).invoke(messages)
-    logger.debug(f"Current state messages: {state['messages']}")
-    response_content = response.content
-    # 尝试修复可能的JSON输出
-    response_content = repair_json_output(response_content)
-    logger.debug(f"reporter response: {response_content}")
+    
+    try:
+        # 验证输入状态
+        if not state.get("messages"):
+            logger.warning("No messages in state for reporter, ending early")
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content="无法生成报告：输入消息为空",
+                            name="reporter",
+                        )
+                    ]
+                },
+                goto="supervisor",
+            )
+            
+        messages = apply_prompt_template("reporter", state)
+        response = get_llm_by_type(AGENT_LLM_MAP["reporter"]).invoke(messages)
+        logger.debug(f"Current state messages: {state['messages']}")
+        
+        # 验证响应内容
+        if not hasattr(response, "content") or response.content is None:
+            logger.error("Reporter returned null content")
+            return Command(
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content="报告生成失败：返回了空内容",
+                            name="reporter",
+                        )
+                    ]
+                },
+                goto="supervisor",
+            )
+        
+        response_content = response.content
+        # 尝试修复可能的JSON输出
+        response_content = repair_json_output(response_content)
+        logger.debug(f"reporter response: {response_content}")
 
-    return Command(
-        update={
-            "messages": [
-                HumanMessage(
-                    content=response_content,
-                    name="reporter",
-                )
-            ]
-        },
-        goto="supervisor",
-    )
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=response_content,
+                        name="reporter",
+                    )
+                ]
+            },
+            goto="supervisor",
+        )
+    except Exception as e:
+        logger.error(f"Error in reporter node: {str(e)}")
+        # 发生错误时提供友好的错误消息
+        return Command(
+            update={
+                "messages": [
+                    HumanMessage(
+                        content=f"生成报告时发生错误: {str(e)}",
+                        name="reporter",
+                    )
+                ]
+            },
+            goto="supervisor",
+        )

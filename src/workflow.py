@@ -1,31 +1,22 @@
 import logging
 from src.config import TEAM_MEMBERS
 from src.graph import build_graph
+from src.utils.log_handler import setup_logging, enable_debug_logging
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,  # Default level is INFO
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-
-
-def enable_debug_logging():
-    """Enable debug level logging for more detailed execution information."""
-    logging.getLogger("src").setLevel(logging.DEBUG)
-
-
+# 创建全局日志记录器
 logger = logging.getLogger(__name__)
 
-# Create the graph
+# 创建工作流图
 graph = build_graph()
 
 
-def run_agent_workflow(user_input: str, debug: bool = False):
+def run_agent_workflow(user_input: str, debug: bool = False, save_logs: bool = True):
     """Run the agent workflow with the given user input.
 
     Args:
         user_input: The user's query or request
         debug: If True, enables debug level logging
+        save_logs: If True, saves logs to file
 
     Returns:
         The final state after the workflow completes
@@ -33,6 +24,9 @@ def run_agent_workflow(user_input: str, debug: bool = False):
     if not user_input:
         raise ValueError("Input could not be empty")
 
+    # 设置日志记录
+    setup_logging(debug=debug, save_to_file=save_logs)
+    
     if debug:
         enable_debug_logging()
 

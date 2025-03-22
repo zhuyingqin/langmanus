@@ -7,19 +7,9 @@ from src.graph import build_graph
 from src.tools.browser import browser_tool
 from langchain_community.adapters.openai import convert_message_to_dict
 import uuid
+from src.utils.log_handler import setup_logging, enable_debug_logging
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,  # Default level is INFO
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-
-
-def enable_debug_logging():
-    """Enable debug level logging for more detailed execution information."""
-    logging.getLogger("src").setLevel(logging.DEBUG)
-
-
+# 创建日志记录器
 logger = logging.getLogger(__name__)
 
 # Create the graph
@@ -39,20 +29,26 @@ async def run_agent_workflow(
     deep_thinking_mode: bool = False,
     search_before_planning: bool = False,
 ):
-    """Run the agent workflow with the given user input.
+    """Runs the agent workflow with the provided input messages.
 
     Args:
-        user_input_messages: The user request messages
+        user_input_messages: List of user input messages
         debug: If True, enables debug level logging
+        deep_thinking_mode: If True, uses more powerful reasoning capabilities
+        search_before_planning: If True, performs a search before planning
 
     Returns:
         The final state after the workflow completes
     """
-    if not user_input_messages:
-        raise ValueError("Input could not be empty")
-
+    # 设置日志系统
+    setup_logging(debug=debug, save_to_file=True)
+    
     if debug:
         enable_debug_logging()
+
+    # Extract the latest message
+    if not user_input_messages or len(user_input_messages) == 0:
+        raise ValueError("Input messages could not be empty")
 
     logger.info(f"Starting workflow with user input: {user_input_messages}")
 

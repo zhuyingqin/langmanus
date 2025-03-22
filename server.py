@@ -5,13 +5,10 @@ Server script for running the LangManus API.
 import logging
 import uvicorn
 import sys
+from src.utils.log_handler import setup_logging
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-
+# 设置日志系统，默认保存日志到文件
+setup_logging(debug=False, save_to_file=True)
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
